@@ -29,12 +29,23 @@ function formatHMS(sec: number) {
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 }
 
+function shorten(s?: string | null, n = 20) {
+  if (!s) return "-";
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
 export default function HomePage() {
   const [today, setToday] = useState<string>(toVNDateStr());
   const [sessions, setSessions] = useState<WorkSession[]>([]);
   const [currentSession, setCurrentSession] = useState<WorkSession | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
   const timerRef = useRef<number | null>(null);
+
+  const [isStarting, setIsStarting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+
+  const [notes, setNotes] = useState<string>("");
+  const [showNoteField, setShowNoteField] = useState(false);
 
   const loadToday = async () => {
     const res = await fetch(`/api/sessions?date=${today}`, { cache: "no-store" });
@@ -62,6 +73,7 @@ export default function HomePage() {
   useEffect(() => {
     setToday(toVNDateStr());
     loadToday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -72,22 +84,39 @@ export default function HomePage() {
   const hasActive = !!currentSession && !currentSession.endAt;
 
   const startSession = async () => {
-    const res = await fetch("/api/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device: "dell", date: today }),
-    });
-    if (res.ok) await loadToday();
-    else alert("Cannot start session");
+    if (isStarting) return;
+    setIsStarting(true);
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device: "dell", date: today, notes }),
+      });
+      if (!res.ok) throw new Error("Cannot start session");
+      await loadToday();
+      setNotes("");
+      setShowNoteField(false);
+    } catch (e) {
+      alert((e as Error).message || "Cannot start session");
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   const stopSession = async () => {
-    if (!currentSession) return;
-    const res = await fetch(`/api/sessions/${currentSession.id}/stop`, {
-      method: "POST",
-    });
-    if (res.ok) await loadToday();
-    else alert("Cannot stop session");
+    if (!currentSession || isStopping) return;
+    setIsStopping(true);
+    try {
+      const res = await fetch(`/api/sessions/${currentSession.id}/stop`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Cannot stop session");
+      await loadToday();
+    } catch (e) {
+      alert((e as Error).message || "Cannot stop session");
+    } finally {
+      setIsStopping(false);
+    }
   };
 
   const totalToday = useMemo(() => {
@@ -98,90 +127,184 @@ export default function HomePage() {
   }, [sessions, elapsed, hasActive]);
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      {/* <h1 className="text-2xl font-semibold mb-2">KUKU • Worklog</h1> */}
-      <p className="text-sm text-gray-600 mb-4">
-        Today: <span className="font-medium">{today}</span>
-      </p>
+    <main className="mx-auto max-w-4xl p-4 sm:p-6">
+      {/* H1 centered */}
+      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-center">
+        Today: <span className="text-gray-800">{today}</span>
+      </h1>
 
-      <div className="flex items-center gap-3 mb-6">
+      {/* Row 1: Start/Stop + Timer + Total */}
+      <div className="flex items-center gap-3 h-10">
         {!hasActive ? (
           <button
             onClick={startSession}
-            className="rounded-xl border px-4 py-2 hover:bg-gray-50"
+            disabled={isStarting}
+            className="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-w-[160px]"
           >
-            ▶ Start
+            {isStarting ? <Spinner /> : <span>▶</span>}
+            <span>{isStarting ? "Starting..." : "Start"}</span>
           </button>
         ) : (
-          <>
-            <button
-              onClick={stopSession}
-              className="rounded-xl border px-4 py-2 hover:bg-gray-50"
-            >
-              ■ Stop
-            </button>
-            <span className="text-lg font-mono">{formatHMS(elapsed)}</span>
-          </>
+          <button
+            onClick={stopSession}
+            disabled={isStopping}
+            className="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-w-[160px]"
+          >
+            {isStopping ? <Spinner /> : <span>■</span>}
+            <span>{isStopping ? "Stopping..." : "Stop"}</span>
+          </button>
         )}
-        <span className="ml-auto text-sm">
-          Total today: <span className="font-semibold">{formatHMS(totalToday)}</span>
+
+        <span className="text-lg font-mono tabular-nums min-w-[88px] text-center" aria-live="polite">
+          {formatHMS(elapsed)}
         </span>
+
+        <div className="ml-auto text-sm">
+          Total today: <span className="font-semibold">{formatHMS(totalToday)}</span>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
-        <table className="min-w-full text-sm">
+      {/* Note input */}
+      <div className="mt-2 mb-6">
+        <button
+          type="button"
+          className="text-sm text-gray-600 hover:underline"
+          onClick={() => setShowNoteField((v) => !v)}
+        >
+          {showNoteField ? "Hide note" : "Add note (optional)"}
+        </button>
+
+        {showNoteField && (
+          <div className="mt-2">
+            <input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isStarting}
+              className="w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              placeholder="Quick note for this session..."
+              maxLength={500}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-md border">
+        <table className="min-w-full text-xs sm:text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left">Start</th>
-              <th className="px-4 py-2 text-left">End</th>
-              <th className="px-4 py-2 text-right">Duration</th>
-              <th className="px-4 py-2 text-left">Device</th>
+              <th className="px-3 sm:px-4 py-2 text-left">Start</th>
+              <th className="px-3 sm:px-4 py-2 text-left hidden sm:table-cell">End</th>
+              <th className="px-3 sm:px-4 py-2 text-right">Duration</th>
+              <th className="px-3 sm:px-4 py-2 text-left hidden sm:table-cell">Device</th>
+              <th className="px-3 sm:px-4 py-2 text-left">Notes</th>
             </tr>
           </thead>
           <tbody>
             {sessions.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+              <tr className="odd:bg-white even:bg-gray-50">
+                <td colSpan={5} className="px-3 sm:px-4 py-6 text-center text-gray-500">
                   No sessions today.
                 </td>
               </tr>
             )}
-            {sessions.map((s) => {
-              const start = new Date(s.startAt).toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                timeZone: "Asia/Ho_Chi_Minh",
-              });
-              const end = s.endAt
-                ? new Date(s.endAt).toLocaleTimeString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })
-                : hasActive && s.id === currentSession?.id
-                ? "Running..."
-                : "-";
-              const duration =
-                s.durationSeconds != null
-                  ? formatHMS(s.durationSeconds)
-                  : hasActive && s.id === currentSession?.id
-                  ? formatHMS(elapsed)
-                  : "-";
 
-              return (
-                <tr key={s.id} className="border-t">
-                  <td className="px-4 py-2">{start}</td>
-                  <td className="px-4 py-2">{end}</td>
-                  <td className="px-4 py-2 text-right font-mono">{duration}</td>
-                  <td className="px-4 py-2">{s.device ?? "-"}</td>
-                </tr>
-              );
-            })}
+            {sessions.map((s) => {
+  const isRunningRow = !s.endAt && s.id === currentSession?.id;
+
+  const start = new Date(s.startAt).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+
+  const end = s.endAt
+    ? new Date(s.endAt).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZone: "Asia/Ho_Chi_Minh",
+      })
+    : isRunningRow
+    ? "Running..."
+    : "-";
+
+  const duration =
+    s.durationSeconds != null
+      ? formatHMS(s.durationSeconds)
+      : isRunningRow
+      ? formatHMS(elapsed)
+      : "-";
+
+  return (
+    <tr
+      key={s.id}
+      className={[
+        "border-t",
+        isRunningRow ? "bg-orange-50" : "odd:bg-white even:bg-gray-50",
+      ].join(" ")}
+    >
+      {/* cột Start */}
+      <td className="px-3 sm:px-4 py-2 relative">
+        {isRunningRow && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r bg-orange-400" />
+        )}
+        {start}
+      </td>
+
+      {/* cột End */}
+      <td className="px-3 sm:px-4 py-2 hidden sm:table-cell">
+        {isRunningRow ? (
+          <span className="text-orange-700 font-medium">Running...</span>
+        ) : (
+          end
+        )}
+      </td>
+
+      {/* cột Duration */}
+      <td className="px-3 sm:px-4 py-2 text-right font-mono tabular-nums">
+        {duration}
+      </td>
+
+      {/* cột Device */}
+      <td className="px-3 sm:px-4 py-2 hidden sm:table-cell">
+        {s.device ?? "-"}
+      </td>
+
+      {/* cột Notes */}
+      <td className="px-3 sm:px-4 py-2">
+        <span title={s.notes || ""}>{shorten(s.notes, 20)}</span>
+      </td>
+    </tr>
+  );
+})}
+
           </tbody>
         </table>
       </div>
     </main>
+  );
+}
+
+/** Simple spinner icon */
+function Spinner({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" aria-hidden="true">
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        fill="none"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4z"
+      />
+    </svg>
   );
 }
