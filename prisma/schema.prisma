@@ -7,16 +7,23 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum WorkSessionStatus {
+  active
+  disabled
+}
+
 model WorkSession {
-  id              String   @id @default(cuid())
-  date            String   // YYYY-MM-DD (Asia/Ho_Chi_Minh)
+  id              String             @id @default(cuid())
+  date            String
   startAt         DateTime
   endAt           DateTime?
   durationSeconds Int?
   device          String?
   notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          WorkSessionStatus  @default(active)  // <-- enum
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   @@index([date])
+  @@index([status])
 }
