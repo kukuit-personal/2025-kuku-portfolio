@@ -178,31 +178,35 @@ export default function HomePage() {
       {/* Row 1: Start/Stop + Timer + Total */}
       <div className="flex items-center gap-3 h-10">
         {!hasActive ? (
-          <button
-            onClick={startSession}
-            disabled={isStarting}
-            className="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-w-[160px]"
-          >
-            {isStarting ? <Spinner /> : <span>▶</span>}
-            <span>{isStarting ? "Starting..." : "Start"}</span>
-          </button>
-        ) : (
-          <button
-            onClick={stopSession}
-            disabled={isStopping}
-            className="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-w-[160px]"
-          >
-            {isStopping ? <Spinner /> : <span>■</span>}
-            <span>{isStopping ? "Stopping..." : "Stop"}</span>
-          </button>
-        )}
+  // ✅ Start button (green)
+  <button
+    onClick={startSession}
+    disabled={isStarting}
+    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
+  >
+    {isStarting ? <Spinner className="w-4 h-4 text-white" /> : <span>▶</span>}
+    <span>{isStarting ? "Starting..." : "Start"}</span>
+  </button>
+) : (
+  // 🟥 Stop button (red)
+  <button
+    onClick={stopSession}
+    disabled={isStopping}
+    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-600 active:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
+  >
+    {isStopping ? <Spinner className="w-4 h-4 text-white" /> : <span>■</span>}
+    <span>{isStopping ? "Stopping..." : "Stop"}</span>
+  </button>
+)}
+
 
         <span className="text-lg font-mono tabular-nums min-w-[88px] text-center" aria-live="polite">
           {formatHMS(elapsed)}
         </span>
 
-        <div className="ml-auto text-sm">
-          Total today: <span className="font-semibold">{formatHMS(totalToday)}</span>
+        <div className="ml-auto text-sm text-right">
+          <p>Total today:</p> 
+          <p className="font-semibold">{formatHMS(totalToday)}</p>
         </div>
       </div>
 
@@ -219,13 +223,20 @@ export default function HomePage() {
         {showNoteField && (
           <div className="mt-2">
             <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isStarting}
-              className="w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              placeholder="Quick note for this session..."
-              maxLength={500}
-            />
+  list="preset-notes"
+  value={notes}
+  onChange={(e) => setNotes(e.target.value)}
+  disabled={isStarting}
+  className="w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+  placeholder="Quick note for this session..."
+  maxLength={500}
+/>
+
+<datalist id="preset-notes">
+  <option value="Ainka task " />
+  <option value="Kuku task " />
+</datalist>
+
           </div>
         )}
       </div>
