@@ -7,6 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Status {
+  active
+  disabled
+}
+
 enum WorkSessionStatus {
   active
   disabled
@@ -23,6 +28,27 @@ model WorkSession {
   status          WorkSessionStatus  @default(active)  // <-- enum
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+
+  @@index([date])
+  @@index([status])
+}
+
+model HealthLog {
+  id            String   @id @default(cuid())
+  date          String   // YYYY-MM-DD (Asia/Ho_Chi_Minh)
+  weekday       String?  // "Hai", "Ba", "Tư", "Bảy", "CN"
+  weight        Decimal? @db.Decimal(5,2)
+
+  morning       String?  // ví dụ: "Tập bóng t3-b4"
+  gym           String?  // ghi chú Gym
+  afternoon     String?  // ví dụ: "Đá bóng"
+  noEatAfter    String?  // "Ok" hoặc ghi chú khác
+  calories      Int?     // Calo (Kcal)
+  goutTreatment Int?     // Mức điều trị gout (0–3)
+
+  status        Status   @default(active)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([date])
   @@index([status])
