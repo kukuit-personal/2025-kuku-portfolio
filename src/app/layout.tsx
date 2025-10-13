@@ -11,13 +11,19 @@ export const metadata: Metadata = {
   title: 'KukuIt | Worklog',
   description: 'KukuIt Worklog System',
   icons: {
-    icon: '/favicon.ico'
+    icon: '/favicon.ico',
   },
+  themeColor: '#f9fafb',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Define your color scheme as light only to avoid flash when toggling dark mode */}
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+      </head>
       <body className={`${inter.className} bg-gray-50`}>
         {/* Checkbox để toggle sidebar trên mobile (CSS-only) */}
         <input id="nav-toggle" type="checkbox" className="peer sr-only" />

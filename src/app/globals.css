@@ -18,11 +18,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb)))
     rgb(var(--background-start-rgb));
 }
 
@@ -30,4 +26,35 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+/* Site này chỉ light mode */
+html {
+  /* báo cho UA đừng auto-dark */
+  color-scheme: light;
+  background-color: #f9fafb; /* match bg-gray-50 */
+}
+
+/* Khi hệ thống ở dark (do tiết kiệm pin), vẫn giữ light */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    color-scheme: light;
+    background-color: #f9fafb !important;
+  }
+}
+
+/* Windows High Contrast: đừng ép palette */
+@media (forced-colors: active) {
+  html,
+  body {
+    forced-color-adjust: none;
+    background-color: #f9fafb;
+  }
+}
+
+/* Đảm bảo vùng chính luôn có nền (tránh trong suốt) */
+body,
+#__next,
+main {
+  background-color: #f9fafb; /* hoặc #fff cho vùng card */
 }
