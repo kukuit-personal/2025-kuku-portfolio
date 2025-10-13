@@ -603,16 +603,16 @@ export default function HealthLogPage() {
                         : 'odd:bg-white even:bg-gray-50',
                     ].join(' ')}
                   >
-                    <td className="px-3 sm:px-4 py-2">{it.date}</td>
-                    <td className={`px-3 sm:px-4 py-2 ${isSun ? 'bg-orange-300' : ''}`}>{wd}</td>
-                    <td className="px-3 sm:px-4 py-2 text-right">
+                    <td className="px-3 sm:px-4 py-1">{it.date}</td>
+                    <td className={`px-3 sm:px-4 py-1 ${isSun ? 'bg-orange-300' : ''}`}>{wd}</td>
+                    <td className="px-3 sm:px-4 py-1 text-right">
                       {it.weight ? Number(it.weight).toFixed(2) : '-'}
                     </td>
 
                     {/* Morning */}
                     <td
                       className={[
-                        'px-3 sm:px-4 py-2 hidden md:table-cell',
+                        'px-3 sm:px-4 py-1 hidden md:table-cell',
                         hasMorning ? 'bg-green-300' : '',
                       ].join(' ')}
                     >
@@ -622,7 +622,7 @@ export default function HealthLogPage() {
                     {/* Gym */}
                     <td
                       className={[
-                        'px-3 sm:px-4 py-2 hidden md:table-cell',
+                        'px-3 sm:px-4 py-1 hidden md:table-cell',
                         hasGym ? 'bg-green-300' : '',
                       ].join(' ')}
                     >
@@ -631,7 +631,7 @@ export default function HealthLogPage() {
 
                     {/* Afternoon */}
                     <td
-                      className={['px-3 sm:px-4 py-2', hasAfternoon ? 'bg-green-300' : ''].join(
+                      className={['px-3 sm:px-4 py-1', hasAfternoon ? 'bg-green-300' : ''].join(
                         ' '
                       )}
                     >
@@ -641,21 +641,21 @@ export default function HealthLogPage() {
                     {/* NoEat18:30 */}
                     <td
                       className={[
-                        'px-3 sm:px-4 py-2 hidden md:table-cell',
+                        'px-3 sm:px-4 py-1 hidden md:table-cell',
                         hasNoEat ? 'bg-green-300' : '',
                       ].join(' ')}
                     >
                       <span title={it.noEatAfter || ''}>{shorten(it.noEatAfter, 10)}</span>
                     </td>
 
-                    <td className={`px-3 sm:px-4 py-2 text-right ${kcalBgClass(it.calories)}`}>
+                    <td className={`px-3 sm:px-4 py-1 text-right ${kcalBgClass(it.calories)}`}>
                       {it.calories ?? '-'}
                     </td>
-                    <td className={`px-3 sm:px-4 py-2 text-right ${goutBgClass(it.goutTreatment)}`}>
+                    <td className={`px-3 sm:px-4 py-1 text-right ${goutBgClass(it.goutTreatment)}`}>
                       {it.goutTreatment ?? '-'}
                     </td>
 
-                    <td className="px-3 sm:px-4 py-2 text-right relative select-none" data-row-menu>
+                    <td className="px-3 sm:px-4 py-1 text-right relative select-none" data-row-menu>
                       <button
                         type="button"
                         onClick={() => setMenuOpenId((v) => (v === it.id ? null : it.id))}
