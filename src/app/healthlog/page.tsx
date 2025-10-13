@@ -58,6 +58,31 @@ function weekdayOf(dateStr: string) {
   const dt = new Date(Date.UTC(y, m - 1, d))
   return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
 }
+function kcalBgClass(k?: number | null) {
+  if (k == null) return 'bg-white'
+  if (k >= 2500) return 'bg-orange-800'
+  if (k >= 2000) return 'bg-orange-600'
+  if (k >= 1600) return 'bg-orange-500'
+  if (k >= 1200) return 'bg-orange-400'
+  if (k >= 1000) return 'bg-orange-300'
+  return 'bg-white'
+}
+function goutBgClass(g?: number | null) {
+  if (g == null) return 'bg-white'
+  const v = Math.max(0, Math.min(8, Math.floor(g)))
+  if (v === 0) return 'bg-white'
+  const shades = [
+    'bg-green-100',
+    'bg-green-200',
+    'bg-green-300',
+    'bg-green-400',
+    'bg-green-500',
+    'bg-green-600',
+    'bg-green-700',
+    'bg-green-800',
+  ]
+  return shades[v - 1]
+}
 
 // ===== Page =====
 export default function HealthLogPage() {
@@ -527,7 +552,7 @@ export default function HealthLogPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 sm:px-4 py-2 text-left">Date</th>
-              <th className="px-3 sm:px-4 py-2 text-left">Weekday</th>
+              <th className="px-3 sm:px-4 py-2 text-left">Wday</th>
               <th className="px-3 sm:px-4 py-2 text-right">Weight</th>
               <th className="px-3 sm:px-4 py-2 text-left hidden md:table-cell">Morning</th>
               <th className="px-3 sm:px-4 py-2 text-left hidden md:table-cell">Gym</th>
@@ -623,8 +648,12 @@ export default function HealthLogPage() {
                       <span title={it.noEatAfter || ''}>{shorten(it.noEatAfter, 10)}</span>
                     </td>
 
-                    <td className="px-3 sm:px-4 py-2 text-right">{it.calories ?? '-'}</td>
-                    <td className="px-3 sm:px-4 py-2 text-right">{it.goutTreatment ?? '-'}</td>
+                    <td className={`px-3 sm:px-4 py-2 text-right ${kcalBgClass(it.calories)}`}>
+                      {it.calories ?? '-'}
+                    </td>
+                    <td className={`px-3 sm:px-4 py-2 text-right ${goutBgClass(it.goutTreatment)}`}>
+                      {it.goutTreatment ?? '-'}
+                    </td>
 
                     <td className="px-3 sm:px-4 py-2 text-right relative select-none" data-row-menu>
                       <button
