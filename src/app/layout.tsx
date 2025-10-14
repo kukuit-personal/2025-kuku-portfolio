@@ -20,9 +20,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Define your color scheme as light only to avoid flash when toggling dark mode */}
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
+        <meta name="theme-color" content="#f9fafb" />
       </head>
       <body className={`${inter.className} bg-gray-50`}>
         {/* Checkbox để toggle sidebar trên mobile (CSS-only) */}
