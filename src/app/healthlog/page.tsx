@@ -34,7 +34,7 @@ function todayVN() {
   return toVNDateStr()
 }
 function shorten(s?: string | null, n = 18) {
-  if (!s) return '-'
+  if (!s) return ''
   return s.length > n ? s.slice(0, n) + '…' : s
 }
 function addDays(yyyyMmDd: string, delta: number) {
@@ -57,6 +57,18 @@ function weekdayOf(dateStr: string) {
   const [y, m, d] = dateStr.split('-').map(Number)
   const dt = new Date(Date.UTC(y, m - 1, d))
   return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
+}
+function wdAbbr(w: string) {
+  const map: Record<string, string> = {
+    Sun: 'Su',
+    Mon: 'Mo',
+    Tue: 'Tu',
+    Wed: 'We',
+    Thu: 'Th',
+    Fri: 'Fr',
+    Sat: 'Sa',
+  }
+  return map[w] ?? w
 }
 function kcalBgClass(k?: number | null) {
   if (k == null) return 'bg-white'
@@ -86,7 +98,7 @@ function goutBgClass(g?: number | null) {
 
 // ===== Page =====
 export default function HealthLogPage() {
-  // Date của entry mới (mặc định hôm nay) — hiển thị cạnh nút Add entry
+  // Date của entry mới (mặc định hôm nay) — hiển thị trong grid inputs, trước Weight
   const [formDate, setFormDate] = useState<string>(todayVN())
 
   // Data & UI state
@@ -306,13 +318,13 @@ export default function HealthLogPage() {
   // Defaults + Clear
   const genDefaults = () => {
     setForm({
-      weight: '57', // default 57
-      morning: 'Tập bóng', // default Tập bóng (Capped)
-      gym: '', // default blank
-      afternoon: '', // default blank
-      noEatAfter: '', // default blank
-      calories: '1500', // default 1500
-      goutTreatment: '2', // default 2
+      weight: '57',
+      morning: 'Tập bóng',
+      gym: '',
+      afternoon: '',
+      noEatAfter: '',
+      calories: '1500',
+      goutTreatment: '2',
     })
   }
   const clearForm = () => {
@@ -333,42 +345,25 @@ export default function HealthLogPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Health Log</h1>
-
-        <div className="sm:ml-auto flex flex-wrap items-center gap-2">
-          <label className="text-sm text-gray-600">View:</label>
-          <select
-            value={filterMode}
-            onChange={(e) => {
-              setPage(1)
-              setFilterMode(e.target.value as FilterMode)
-            }}
-            className="px-2 py-1 rounded-md border text-sm"
-          >
-            <option value="last7">Last 7 days</option>
-            <option value="thisMonth">This month</option>
-            <option value="all">All</option>
-          </select>
-
-          <label className="ml-3 text-sm text-gray-600">Page size:</label>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPage(1)
-              setPageSize(Number(e.target.value))
-            }}
-            className="px-2 py-1 rounded-md border text-sm"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
       </div>
 
       {/* Add form */}
       <div className="rounded-md border bg-white p-3 sm:p-4 mb-4">
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3">
-          {/* Weight (col-1) */}
+          {/* Date */}
+          <div className="col-span-1">
+            <label className="block text-xs text-gray-600 mb-1">Date</label>
+            <input
+              type="date"
+              value={formDate}
+              onChange={(e) => setFormDate(e.target.value)}
+              className="w-full rounded-md border px-2 py-1 text-sm"
+              title="Entry date"
+              aria-label="Entry date"
+            />
+          </div>
+
+          {/* Weight */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">Weight (kg)</label>
             <input
@@ -381,7 +376,7 @@ export default function HealthLogPage() {
             />
           </div>
 
-          {/* Morning (col-2) */}
+          {/* Morning */}
           <div className="col-span-2">
             <label className="block text-xs text-gray-600 mb-1">Morning</label>
             <input
@@ -393,70 +388,89 @@ export default function HealthLogPage() {
             />
           </div>
 
-          {/* Gym (col-1) */}
+          {/* Gym */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">Gym</label>
             <input
               list="dlGym"
               value={form.gym}
               onChange={(e) => setForm((f) => ({ ...f, gym: e.target.value }))}
-              placeholder=""
               className="w-full rounded-md border px-2 py-1 text-sm"
             />
           </div>
 
-          {/* Afternoon (col-1) */}
+          {/* Afternoon */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">Afternoon</label>
             <input
               list="dlAfternoon"
               value={form.afternoon}
               onChange={(e) => setForm((f) => ({ ...f, afternoon: e.target.value }))}
-              placeholder=""
               className="w-full rounded-md border px-2 py-1 text-sm"
             />
           </div>
 
-          {/* No eat after (col-1) */}
+          {/* No eat after */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">No eat after 18:30</label>
             <input
               list="dlNoEat"
               value={form.noEatAfter}
               onChange={(e) => setForm((f) => ({ ...f, noEatAfter: e.target.value }))}
-              placeholder=""
               className="w-full rounded-md border px-2 py-1 text-sm"
             />
           </div>
 
-          {/* Calories (col-1) */}
+          {/* Calories */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">Calories</label>
             <input
               list="dlCalories"
               value={form.calories}
               onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))}
-              placeholder="0"
               className="w-full rounded-md border px-2 py-1 text-sm"
               inputMode="numeric"
             />
           </div>
 
-          {/* Gout (col-1) */}
+          {/* Gout */}
           <div className="col-span-1">
             <label className="block text-xs text-gray-600 mb-1">Gout</label>
             <input
               list="dlGout"
               value={form.goutTreatment}
               onChange={(e) => setForm((f) => ({ ...f, goutTreatment: e.target.value }))}
-              placeholder="0"
               className="w-full rounded-md border px-2 py-1 text-sm"
               inputMode="numeric"
             />
           </div>
+
+          {/* Gen default + Clear form */}
+          <div className="col-span-1">
+            <label className="block text-xs text-gray-600 mb-1">&nbsp;</label>
+            <button
+              onClick={genDefaults}
+              className="w-full px-2 py-1 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
+              type="button"
+              title="Generate default values"
+            >
+              Gen default
+            </button>
+          </div>
+          <div className="col-span-1">
+            <label className="block text-xs text-gray-600 mb-1">&nbsp;</label>
+            <button
+              onClick={clearForm}
+              className="w-full px-2 py-1 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
+              type="button"
+              title="Clear form"
+            >
+              Clear form
+            </button>
+          </div>
         </div>
 
-        {/* DataLists (Capitalized) */}
+        {/* DataLists */}
         <datalist id="dlWeight">
           <option value="55" />
           <option value="56" />
@@ -504,46 +518,50 @@ export default function HealthLogPage() {
           <option value="8" />
         </datalist>
 
-        {/* Actions under inputs */}
-        <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={genDefaults}
-              className="px-3 py-1.5 rounded-md border bg-gray-100 hover:bg-gray-200"
-              type="button"
-              title="Generate default values"
-            >
-              Gen default
-            </button>
-            <button
-              onClick={clearForm}
-              className="px-3 py-1.5 rounded-md border hover:bg-gray-50"
-              type="button"
-              title="Clear form"
-            >
-              Clear form
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={formDate}
-              onChange={(e) => setFormDate(e.target.value)}
-              className="px-3 py-1.5 rounded-md border text-sm"
-              title="Entry date"
-              aria-label="Entry date"
-            />
-            <button
-              onClick={createItem}
-              disabled={isCreating}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60"
-            >
-              {isCreating ? <Spinner className="w-4 h-4 text-white" /> : <PlusIcon />}
-              <span>{isCreating ? 'Saving...' : 'Add entry'}</span>
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={createItem}
+            disabled={isCreating}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60"
+          >
+            {isCreating ? <Spinner className="w-4 h-4 text-white" /> : <PlusIcon />}
+            <span>{isCreating ? 'Saving...' : 'Add entry'}</span>
+          </button>
         </div>
+      </div>
+
+      {/* Controls trên table: View + Page size */}
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <label className="text-sm text-gray-600">View:</label>
+        <select
+          value={filterMode}
+          onChange={(e) => {
+            setPage(1)
+            setFilterMode(e.target.value as FilterMode)
+          }}
+          className="px-2 py-1 rounded-md border text-sm"
+        >
+          <option value="last7">Last 7 days</option>
+          <option value="thisMonth">This month</option>
+          <option value="all">All</option>
+        </select>
+
+        <span className="hidden sm:inline-block w-px h-5 bg-gray-200 mx-1" />
+
+        <label className="text-sm text-gray-600">Page size:</label>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPage(1)
+            setPageSize(Number(e.target.value))
+          }}
+          className="px-2 py-1 rounded-md border text-sm"
+        >
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -552,21 +570,21 @@ export default function HealthLogPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 sm:px-4 py-2 text-left">Date</th>
-              <th className="px-3 sm:px-4 py-2 text-left">Wday</th>
               <th className="px-3 sm:px-4 py-2 text-right">Weight</th>
-              <th className="px-3 sm:px-4 py-2 text-left hidden md:table-cell">Morning</th>
-              <th className="px-3 sm:px-4 py-2 text-left hidden md:table-cell">Gym</th>
-              <th className="px-3 sm:px-4 py-2 text-left">Afternoon</th>
-              <th className="px-3 sm:px-4 py-2 text-left hidden md:table-cell">NoEat18:30</th>
-              <th className="px-3 sm:px-4 py-2 text-right">Kcal</th>
-              <th className="px-3 sm:px-4 py-2 text-right">Gout</th>
+              {/* Các cột chi tiết chỉ hiện từ lg trở lên */}
+              <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">Morning</th>
+              <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">Gym</th>
+              <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">Afternoon</th>
+              <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">NoEat18:30</th>
+              <th className="px-3 sm:px-4 py-2 text-right hidden lg:table-cell">Kcal</th>
+              <th className="px-3 sm:px-4 py-2 text-right hidden lg:table-cell">Gout</th>
               <th className="px-3 sm:px-4 py-2 text-right w-12">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="px-3 sm:px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-3 sm:px-4 py-6 text-center text-gray-500">
                   <span className="inline-flex items-center gap-2">
                     <Spinner className="w-4 h-4" /> Loading...
                   </span>
@@ -576,16 +594,17 @@ export default function HealthLogPage() {
 
             {!isLoading && items.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 sm:px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-3 sm:px-4 py-6 text-center text-gray-500">
                   No records.
                 </td>
               </tr>
             )}
 
             {!isLoading &&
-              items.map((it) => {
+              items.map((it, idx) => {
                 const isMenuOpen = menuOpenId === it.id
                 const wd = weekdayOf(it.date) // 'Sun', 'Mon', ...
+                const wdShort = wdAbbr(wd)
                 const isSun = wd === 'Sun'
 
                 const hasMorning = !!(it.morning && it.morning.trim())
@@ -593,108 +612,215 @@ export default function HealthLogPage() {
                 const hasAfternoon = !!(it.afternoon && it.afternoon.trim())
                 const hasNoEat = !!(it.noEatAfter && it.noEatAfter.trim())
 
+                // Zebra striping theo index (áp dụng cho cả main row + detail row)
+                const stripe = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                const rowTone = it.status === 'disabled' ? 'bg-gray-100 text-gray-500' : stripe
+
                 return (
-                  <tr
-                    key={it.id}
-                    className={[
-                      'border-t',
-                      it.status === 'disabled'
-                        ? 'bg-gray-100 text-gray-500'
-                        : 'odd:bg-white even:bg-gray-50',
-                    ].join(' ')}
-                  >
-                    <td className="px-3 sm:px-4 py-1">{it.date}</td>
-                    <td className={`px-3 sm:px-4 py-1 ${isSun ? 'bg-orange-300' : ''}`}>{wd}</td>
-                    <td className="px-3 sm:px-4 py-1 text-right">
-                      {it.weight ? Number(it.weight).toFixed(2) : '-'}
-                    </td>
-
-                    {/* Morning */}
-                    <td
+                  <>
+                    <tr
+                      key={it.id}
                       className={[
-                        'px-3 sm:px-4 py-1 hidden md:table-cell',
-                        hasMorning ? 'bg-green-300' : '',
+                        'border-t',
+                        isSun ? 'border-t border-gray-400 ' : '',
+                        rowTone,
                       ].join(' ')}
                     >
-                      <span title={it.morning || ''}>{shorten(it.morning, 20)}</span>
-                    </td>
-
-                    {/* Gym */}
-                    <td
-                      className={[
-                        'px-3 sm:px-4 py-1 hidden md:table-cell',
-                        hasGym ? 'bg-green-300' : '',
-                      ].join(' ')}
-                    >
-                      <span title={it.gym || ''}>{shorten(it.gym, 16)}</span>
-                    </td>
-
-                    {/* Afternoon */}
-                    <td
-                      className={['px-3 sm:px-4 py-1', hasAfternoon ? 'bg-green-300' : ''].join(
-                        ' '
-                      )}
-                    >
-                      <span title={it.afternoon || ''}>{shorten(it.afternoon, 18)}</span>
-                    </td>
-
-                    {/* NoEat18:30 */}
-                    <td
-                      className={[
-                        'px-3 sm:px-4 py-1 hidden md:table-cell',
-                        hasNoEat ? 'bg-green-300' : '',
-                      ].join(' ')}
-                    >
-                      <span title={it.noEatAfter || ''}>{shorten(it.noEatAfter, 10)}</span>
-                    </td>
-
-                    <td className={`px-3 sm:px-4 py-1 text-right ${kcalBgClass(it.calories)}`}>
-                      {it.calories ?? '-'}
-                    </td>
-                    <td className={`px-3 sm:px-4 py-1 text-right ${goutBgClass(it.goutTreatment)}`}>
-                      {it.goutTreatment ?? '-'}
-                    </td>
-
-                    <td className="px-3 sm:px-4 py-1 text-right relative select-none" data-row-menu>
-                      <button
-                        type="button"
-                        onClick={() => setMenuOpenId((v) => (v === it.id ? null : it.id))}
-                        className="inline-grid place-items-center w-7 h-7 rounded hover:bg-gray-100"
-                        aria-haspopup="menu"
-                        aria-expanded={isMenuOpen}
-                        aria-label="Open row menu"
+                      {/* Date + (Wday) — Sunday: text red + border-top red */}
+                      <td
+                        className={[
+                          'px-3 sm:px-4 py-1',
+                          isSun ? 'text-red-600 font-bold' : '',
+                        ].join(' ')}
+                        title={wd}
                       >
-                        <DotsIcon />
-                      </button>
+                        {it.date ? `${it.date}(${wdShort})` : ''}
+                      </td>
 
-                      {isMenuOpen && (
-                        <div
-                          role="menu"
-                          className="absolute right-2 bottom-8 z-20 w-36 rounded-md border bg-white shadow-lg py-1 text-sm"
+                      {/* Weight */}
+                      <td className="px-3 sm:px-4 py-1 text-right">
+                        {it.weight ? Number(it.weight).toFixed(2) : ''}
+                      </td>
+
+                      {/* Morning (lg+) */}
+                      <td
+                        className={[
+                          'px-3 sm:px-4 py-1 hidden lg:table-cell',
+                          hasMorning ? 'bg-green-300' : '',
+                        ].join(' ')}
+                      >
+                        <span title={it.morning || ''}>{shorten(it.morning, 20)}</span>
+                      </td>
+
+                      {/* Gym (lg+) */}
+                      <td
+                        className={[
+                          'px-3 sm:px-4 py-1 hidden lg:table-cell',
+                          hasGym ? 'bg-green-300' : '',
+                        ].join(' ')}
+                      >
+                        <span title={it.gym || ''}>{shorten(it.gym, 16)}</span>
+                      </td>
+
+                      {/* Afternoon (lg+) */}
+                      <td
+                        className={[
+                          'px-3 sm:px-4 py-1 hidden lg:table-cell',
+                          hasAfternoon ? 'bg-green-300' : '',
+                        ].join(' ')}
+                      >
+                        <span title={it.afternoon || ''}>{shorten(it.afternoon, 18)}</span>
+                      </td>
+
+                      {/* NoEat18:30 (lg+) */}
+                      <td
+                        className={[
+                          'px-3 sm:px-4 py-1 hidden lg:table-cell',
+                          hasNoEat ? 'bg-green-300' : '',
+                        ].join(' ')}
+                      >
+                        <span title={it.noEatAfter || ''}>{shorten(it.noEatAfter, 10)}</span>
+                      </td>
+
+                      {/* Kcal (lg+) */}
+                      <td
+                        className={`px-3 sm:px-4 py-1 text-right hidden lg:table-cell ${kcalBgClass(
+                          it.calories
+                        )}`}
+                      >
+                        {it.calories != null ? it.calories : ''}
+                      </td>
+
+                      {/* Gout (lg+) */}
+                      <td
+                        className={`px-3 sm:px-4 py-1 text-right hidden lg:table-cell ${goutBgClass(
+                          it.goutTreatment
+                        )}`}
+                      >
+                        {it.goutTreatment != null ? it.goutTreatment : ''}
+                      </td>
+
+                      {/* Actions */}
+                      <td
+                        className="px-3 sm:px-4 py-1 text-right relative select-none"
+                        data-row-menu
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setMenuOpenId((v) => (v === it.id ? null : it.id))}
+                          className="inline-grid place-items-center w-7 h-7 rounded hover:bg-gray-100"
+                          aria-haspopup="menu"
+                          aria-expanded={isMenuOpen}
+                          aria-label="Open row menu"
                         >
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setMenuOpenId(null)
-                              openEdit(it)
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50"
+                          <DotsIcon />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div
+                            role="menu"
+                            className="absolute right-2 bottom-8 z-20 w-36 rounded-md border bg-white shadow-lg py-1 text-sm"
                           >
-                            <EditIcon className="w-4 h-4" />
-                            Edit
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => deleteItem(it.id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-red-600"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                            Delete
-                          </button>
+                            <button
+                              role="menuitem"
+                              onClick={() => {
+                                setMenuOpenId(null)
+                                openEdit(it)
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50"
+                            >
+                              <EditIcon className="w-4 h-4" />
+                              Edit
+                            </button>
+                            <button
+                              role="menuitem"
+                              onClick={() => deleteItem(it.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-red-600"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Scroll-x details: hiển thị từ md trở xuống (lg ẩn) */}
+                    <tr className={['lg:hidden', rowTone].join(' ')}>
+                      {/* Cột đang hiển thị trên hàng chính: Date, Weight, Actions => 3 cột */}
+                      <td colSpan={3} className="px-3 sm:px-4 pb-2">
+                        <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+                          <div className="inline-flex gap-2 min-w-max">
+                            {/* Morning */}
+                            <div
+                              className={`px-2 py-1 rounded border ${
+                                it.morning?.trim() ? 'bg-green-300' : 'bg-white'
+                              }`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">Morning</div>
+                              <div className="text-sm" title={it.morning || ''}>
+                                {shorten(it.morning, 20)}
+                              </div>
+                            </div>
+
+                            {/* Gym */}
+                            <div
+                              className={`px-2 py-1 rounded border ${
+                                it.gym?.trim() ? 'bg-green-300' : 'bg-white'
+                              }`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">Gym</div>
+                              <div className="text-sm" title={it.gym || ''}>
+                                {shorten(it.gym, 16)}
+                              </div>
+                            </div>
+
+                            {/* Afternoon */}
+                            <div
+                              className={`px-2 py-1 rounded border ${
+                                it.afternoon?.trim() ? 'bg-green-300' : 'bg-white'
+                              }`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">Afternoon</div>
+                              <div className="text-sm" title={it.afternoon || ''}>
+                                {shorten(it.afternoon, 18)}
+                              </div>
+                            </div>
+
+                            {/* NoEat18:30 */}
+                            <div
+                              className={`px-2 py-1 rounded border ${
+                                it.noEatAfter?.trim() ? 'bg-green-300' : 'bg-white'
+                              }`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">NoEat18:30</div>
+                              <div className="text-sm" title={it.noEatAfter || ''}>
+                                {shorten(it.noEatAfter, 10)}
+                              </div>
+                            </div>
+
+                            {/* Kcal */}
+                            <div className={`px-2 py-1 rounded border ${kcalBgClass(it.calories)}`}>
+                              <div className="text-[10px] uppercase text-gray-500">Kcal</div>
+                              <div className="text-sm">
+                                {it.calories != null ? it.calories : ''}
+                              </div>
+                            </div>
+
+                            {/* Gout */}
+                            <div
+                              className={`px-2 py-1 rounded border ${goutBgClass(it.goutTreatment)}`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">Gout</div>
+                              <div className="text-sm">
+                                {it.goutTreatment != null ? it.goutTreatment : ''}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  </>
                 )
               })}
           </tbody>
@@ -762,9 +888,9 @@ export default function HealthLogPage() {
               </button>
             </div>
 
-            {/* Modal fields order aligned with table (Morning col-2, others col-1) */}
+            {/* Modal fields */}
             <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3">
-              {/* Date (col-2) */}
+              {/* Date */}
               <div className="col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Date</label>
                 <input
@@ -775,7 +901,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Weight (col-1) */}
+              {/* Weight */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Weight</label>
                 <input
@@ -787,7 +913,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Morning (col-2) */}
+              {/* Morning */}
               <div className="col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Morning</label>
                 <input
@@ -798,7 +924,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Gym (col-1) */}
+              {/* Gym */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Gym</label>
                 <input
@@ -809,7 +935,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Afternoon (col-1) */}
+              {/* Afternoon */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Afternoon</label>
                 <input
@@ -820,7 +946,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* No eat after 18:30 (col-1) */}
+              {/* No eat after 18:30 */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">No eat 18:30</label>
                 <input
@@ -831,7 +957,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Calories (col-1) */}
+              {/* Calories */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Calories</label>
                 <input
@@ -843,7 +969,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Gout (col-1) */}
+              {/* Gout */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Gout</label>
                 <input
@@ -855,7 +981,7 @@ export default function HealthLogPage() {
                 />
               </div>
 
-              {/* Status (col-1) */}
+              {/* Status */}
               <div className="col-span-1">
                 <label className="block text-xs text-gray-600 mb-1">Status</label>
                 <select

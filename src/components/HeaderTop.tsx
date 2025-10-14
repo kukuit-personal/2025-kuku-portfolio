@@ -1,9 +1,11 @@
 // app/components/HeaderTop.tsx
 
+import Link from 'next/link'
+
 export default function HeaderTop() {
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
-      <div className="h-12 max-w-7xl mx-auto px-3 sm:px-4 flex items-center">
+      <div className="h-12 mx-auto px-3 sm:px-4 flex items-center">
         {/* Hamburger chỉ hiện trên mobile */}
         <label
           htmlFor="nav-toggle"
@@ -16,18 +18,23 @@ export default function HeaderTop() {
         </label>
 
         {/* Left: icon app (K) */}
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-indigo-600 grid place-items-center text-white text-[10px] font-bold">
-            K
+        <Link href="/" className="mr-2 sm:mr-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-indigo-600 grid place-items-center text-white text-[10px] font-bold">
+              K
+            </div>
           </div>
-        </div>
+        </Link>
 
         {/* Center: search */}
         <div className="flex-1 flex justify-center px-3">
           <div className="w-full max-w-3xl relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2">
               <svg viewBox="0 0 24 24" className="w-3 h-3 text-gray-400">
-                <path fill="currentColor" d="M10 18a7.96 7.96 0 0 0 4.9-1.7l4.4 4.4l1.4-1.4l-4.4-4.4A8 8 0 1 0 10 18m0-2a6 6 0 1 1 0-12a6 6 0 0 1 0 12"/>
+                <path
+                  fill="currentColor"
+                  d="M10 18a7.96 7.96 0 0 0 4.9-1.7l4.4 4.4l1.4-1.4l-4.4-4.4A8 8 0 1 0 10 18m0-2a6 6 0 1 1 0-12a6 6 0 0 1 0 12"
+                />
               </svg>
             </span>
             <input
@@ -44,7 +51,10 @@ export default function HeaderTop() {
             className="h-7 w-7 grid place-items-center rounded-md hover:bg-gray-100 text-gray-600"
           >
             <svg viewBox="0 0 24 24" className="w-3 h-3">
-              <path fill="currentColor" d="M12 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4"/>
+              <path
+                fill="currentColor"
+                d="M12 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4"
+              />
             </svg>
           </button>
 
@@ -57,5 +67,5 @@ export default function HeaderTop() {
         </div>
       </div>
     </header>
-  );
+  )
 }
