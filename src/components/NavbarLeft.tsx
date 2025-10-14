@@ -4,7 +4,20 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
-import { Briefcase, HeartPulse, ListTodo, Wallet, AArrowUp } from 'lucide-react'
+import {
+  Briefcase,
+  HeartPulse,
+  ListTodo,
+  Wallet,
+  AArrowUp,
+  Laptop,
+  Laptop2,
+  LaptopIcon,
+  DollarSign,
+  CircleDollarSign,
+  Volleyball,
+  PiggyBank,
+} from 'lucide-react'
 
 type NavItem = {
   href: string
@@ -13,11 +26,11 @@ type NavItem = {
 }
 
 const ITEMS: NavItem[] = [
-  { href: '/worklog', label: 'Worklog', icon: Briefcase },
+  { href: '/worklog', label: 'Worklog', icon: Laptop },
   { href: '/healthlog', label: 'Health', icon: HeartPulse },
   { href: '/todolist', label: 'Todolist', icon: ListTodo },
-  { href: '/money', label: 'Money', icon: Wallet },
-  { href: '/football', label: 'Football', icon: AArrowUp },
+  { href: '/money', label: 'Money', icon: PiggyBank },
+  { href: '/football', label: 'Football', icon: Volleyball },
 ]
 
 function isActive(pathname: string, href: string) {
@@ -94,7 +107,7 @@ export default function NavbarLeft() {
       </div>
 
       {/* nav */}
-      <nav className="w-full sm:w-full sm:flex sm:flex-col sm:items-stretch">
+      <nav className="w-full sm:w-full sm:flex sm:flex-col sm:items-stretch sticky top-0">
         <div className="grid grid-cols-1 gap-1 sm:gap-1 w-full">
           {ITEMS.map((it) => (
             <NavButton key={it.href} item={it} active={isActive(pathname, it.href)} />
