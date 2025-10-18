@@ -53,3 +53,76 @@ model HealthLog {
   @@index([date])
   @@index([status])
 }
+
+// ========= Enums cho Todo =========
+enum TodoCategory {
+  Ainka
+  Kuku
+  Freelancer
+  Personal
+  Learning
+  Other
+}
+
+enum TodoPriority {
+  low
+  normal
+  high
+  urgent
+  critical
+}
+
+enum TodoState {
+  todo        // tạo mới, chưa bắt đầu
+  in_progress // đang làm
+  waiting     // đang chờ ai đó/điều kiện
+  blocked     // bị chặn
+  done        // hoàn thành
+  canceled    // hủy
+  archived    // lưu trữ, ẩn khỏi view mặc định
+}
+
+// ========= Model Todo (đơn bảng, tự quản lý cha–con) =========
+model Todo {
+  id          String       @id @default(cuid())
+
+  // Nội dung & phân loại
+  title       String
+  description String?
+  labels      String[]     // "nhãn" – mảng text (Postgres text[])
+
+  category    TodoCategory @default(Other)
+  priority    TodoPriority @default(normal)
+  state       TodoState    @default(todo)
+
+  // Thời gian
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  dueAt       DateTime?    // deadline (có thể bỏ trống)
+  startedAt   DateTime?
+  completedAt DateTime?
+  canceledAt  DateTime?
+
+  // Quản lý tiến độ/ước lượng (tùy chọn)
+  estimateMin Int?         // ước lượng (phút)
+  spentMin    Int?         // thời gian đã làm (phút), có thể tự cộng dồn
+
+  // “Waiting on” – ghi chú đang chờ ai/điều gì
+  waitingOn   String?
+
+  // Cây cha–con (subtasks) dùng self-relation
+  parentId    String?
+  parent      Todo?        @relation("TodoSubtasks", fields: [parentId], references: [id])
+  subtasks    Todo[]       @relation("TodoSubtasks")
+
+  // Sắp xếp thủ công trong cùng parent (nếu cần)
+  sortOrder   Int?
+
+  // Soft enable/disable theo schema chung của bạn
+  status      Status       @default(active)
+
+  @@index([state, priority, dueAt])
+  @@index([category])
+  @@index([parentId, sortOrder])
+  @@index([status])
+}

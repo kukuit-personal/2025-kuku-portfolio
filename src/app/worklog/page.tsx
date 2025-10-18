@@ -1,172 +1,170 @@
-"use client";
+'use client'
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type WorkSession = {
-  id: string;
-  date: string; // YYYY-MM-DD
-  startAt: string;
-  endAt?: string | null;
-  durationSeconds?: number | null;
-  device?: string | null;
-  notes?: string | null;
-  status?: "active" | "disabled";
-};
+  id: string
+  date: string // YYYY-MM-DD
+  startAt: string
+  endAt?: string | null
+  durationSeconds?: number | null
+  device?: string | null
+  notes?: string | null
+  status?: 'active' | 'disabled'
+}
 
 function toVNDateStr(date = new Date()) {
-  const tzDate = new Date(
-    date.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })
-  );
-  const y = tzDate.getFullYear();
-  const m = String(tzDate.getMonth() + 1).padStart(2, "0");
-  const d = String(tzDate.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }))
+  const y = tzDate.getFullYear()
+  const m = String(tzDate.getMonth() + 1).padStart(2, '0')
+  const d = String(tzDate.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function formatHMS(sec: number) {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':')
 }
 
 function shorten(s?: string | null, n = 20) {
-  if (!s) return "-";
-  return s.length > n ? s.slice(0, n) + "…" : s;
+  if (!s) return '-'
+  return s.length > n ? s.slice(0, n) + '…' : s
 }
 
 export default function HomePage() {
-  const [today, setToday] = useState<string>(toVNDateStr());
-  const [sessions, setSessions] = useState<WorkSession[]>([]);
-  const [currentSession, setCurrentSession] = useState<WorkSession | null>(null);
-  const [elapsed, setElapsed] = useState<number>(0);
-  const timerRef = useRef<number | null>(null);
+  const [today, setToday] = useState<string>(toVNDateStr())
+  const [sessions, setSessions] = useState<WorkSession[]>([])
+  const [currentSession, setCurrentSession] = useState<WorkSession | null>(null)
+  const [elapsed, setElapsed] = useState<number>(0)
+  const timerRef = useRef<number | null>(null)
 
-  const [isStarting, setIsStarting] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isStarting, setIsStarting] = useState(false)
+  const [isStopping, setIsStopping] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const [notes, setNotes] = useState<string>("");
-  const [showNoteField, setShowNoteField] = useState(false);
+  const [notes, setNotes] = useState<string>('')
+  const [showNoteField, setShowNoteField] = useState(false)
 
   // menu state
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
   const loadToday = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const res = await fetch(`/api/sessions?date=${today}`, { cache: "no-store" });
-      const data = await res.json();
-      setSessions(data.sessions ?? []);
+      const res = await fetch(`/api/sessions?date=${today}`, { cache: 'no-store' })
+      const data = await res.json()
+      setSessions(data.sessions ?? [])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     if (currentSession && !currentSession.endAt) {
       const tick = () => {
-        const start = new Date(currentSession.startAt).getTime();
-        setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)));
-      };
-      tick();
-      timerRef.current = window.setInterval(tick, 1000);
+        const start = new Date(currentSession.startAt).getTime()
+        setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)))
+      }
+      tick()
+      timerRef.current = window.setInterval(tick, 1000)
       return () => {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-      };
+        if (timerRef.current) window.clearInterval(timerRef.current)
+      }
     } else {
-      setElapsed(0);
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      setElapsed(0)
+      if (timerRef.current) window.clearInterval(timerRef.current)
     }
-  }, [currentSession]);
+  }, [currentSession])
 
   useEffect(() => {
-    setToday(toVNDateStr());
-    loadToday();
+    setToday(toVNDateStr())
+    loadToday()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   useEffect(() => {
-    const active = sessions.find((s) => !s.endAt);
-    setCurrentSession(active ?? null);
-  }, [sessions]);
+    const active = sessions.find((s) => !s.endAt)
+    setCurrentSession(active ?? null)
+  }, [sessions])
 
-  const hasActive = !!currentSession && !currentSession.endAt;
+  const hasActive = !!currentSession && !currentSession.endAt
 
   const startSession = async () => {
-    if (isStarting) return;
-    setIsStarting(true);
+    if (isStarting) return
+    setIsStarting(true)
     try {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device: "dell", date: today, notes }),
-      });
-      if (!res.ok) throw new Error("Cannot start session");
-      await loadToday();
-      setNotes("");
-      setShowNoteField(false);
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device: 'dell', date: today, notes }),
+      })
+      if (!res.ok) throw new Error('Cannot start session')
+      await loadToday()
+      setNotes('')
+      setShowNoteField(false)
     } catch (e) {
-      alert((e as Error).message || "Cannot start session");
+      alert((e as Error).message || 'Cannot start session')
     } finally {
-      setIsStarting(false);
+      setIsStarting(false)
     }
-  };
+  }
 
   const stopSession = async () => {
-    if (!currentSession || isStopping) return;
-    setIsStopping(true);
+    if (!currentSession || isStopping) return
+    setIsStopping(true)
     try {
       const res = await fetch(`/api/sessions/${currentSession.id}/stop`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Cannot stop session");
-      await loadToday();
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Cannot stop session')
+      await loadToday()
     } catch (e) {
-      alert((e as Error).message || "Cannot stop session");
+      alert((e as Error).message || 'Cannot stop session')
     } finally {
-      setIsStopping(false);
+      setIsStopping(false)
     }
-  };
+  }
 
   const deleteSession = async (id: string) => {
-    setMenuOpenId(null);
-    if (!confirm("Delete this session? (soft delete)")) return;
+    setMenuOpenId(null)
+    if (!confirm('Delete this session? (soft delete)')) return
     try {
-      const res = await fetch(`/api/sessions/${id}/delete`, { method: "POST" });
+      const res = await fetch(`/api/sessions/${id}/delete`, { method: 'POST' })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || "Cannot delete session");
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'Cannot delete session')
       }
-      await loadToday();
+      await loadToday()
     } catch (e) {
-      alert((e as Error).message || "Cannot delete session");
+      alert((e as Error).message || 'Cannot delete session')
     }
-  };
+  }
 
   const totalToday = useMemo(() => {
     const done = sessions
       .filter((s) => s.endAt && s.durationSeconds)
-      .reduce((sum, s) => sum + (s.durationSeconds || 0), 0);
-    return hasActive ? done + elapsed : done;
-  }, [sessions, elapsed, hasActive]);
+      .reduce((sum, s) => sum + (s.durationSeconds || 0), 0)
+    return hasActive ? done + elapsed : done
+  }, [sessions, elapsed, hasActive])
 
   // close menu on outside click / esc
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest?.("[data-row-menu]")) setMenuOpenId(null);
-    };
+      const target = e.target as HTMLElement
+      if (!target.closest?.('[data-row-menu]')) setMenuOpenId(null)
+    }
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpenId(null);
-    };
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onEsc);
+      if (e.key === 'Escape') setMenuOpenId(null)
+    }
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onEsc)
     return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, []);
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
@@ -178,34 +176,36 @@ export default function HomePage() {
       {/* Row 1: Start/Stop + Timer + Total */}
       <div className="flex items-center gap-3 h-10">
         {!hasActive ? (
-  // ✅ Start button (green)
-  <button
-    onClick={startSession}
-    disabled={isStarting}
-    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
-  >
-    {isStarting ? <Spinner className="w-4 h-4 text-white" /> : <span>▶</span>}
-    <span>{isStarting ? "Starting..." : "Start"}</span>
-  </button>
-) : (
-  // 🟥 Stop button (red)
-  <button
-    onClick={stopSession}
-    disabled={isStopping}
-    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-600 active:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
-  >
-    {isStopping ? <Spinner className="w-4 h-4 text-white" /> : <span>■</span>}
-    <span>{isStopping ? "Stopping..." : "Stop"}</span>
-  </button>
-)}
+          // ✅ Start button (green)
+          <button
+            onClick={startSession}
+            disabled={isStarting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
+          >
+            {isStarting ? <Spinner className="w-4 h-4 text-white" /> : <span>▶</span>}
+            <span>{isStarting ? 'Starting...' : 'Start'}</span>
+          </button>
+        ) : (
+          // 🟥 Stop button (red)
+          <button
+            onClick={stopSession}
+            disabled={isStopping}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-600 active:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px] transition-colors"
+          >
+            {isStopping ? <Spinner className="w-4 h-4 text-white" /> : <span>■</span>}
+            <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
+          </button>
+        )}
 
-
-        <span className="text-lg font-mono tabular-nums min-w-[88px] text-center" aria-live="polite">
+        <span
+          className="text-lg font-mono tabular-nums min-w-[88px] text-center"
+          aria-live="polite"
+        >
           {formatHMS(elapsed)}
         </span>
 
         <div className="ml-auto text-sm text-right">
-          <p>Total today:</p> 
+          <p>Total today:</p>
           <p className="font-semibold">{formatHMS(totalToday)}</p>
         </div>
       </div>
@@ -217,26 +217,29 @@ export default function HomePage() {
           className="text-sm text-gray-600 hover:underline"
           onClick={() => setShowNoteField((v) => !v)}
         >
-          {showNoteField ? "Hide note" : "Add note (optional)"}
+          {showNoteField ? 'Hide note' : 'Add note (optional)'}
         </button>
 
         {showNoteField && (
           <div className="mt-2">
             <input
-  list="preset-notes"
-  value={notes}
-  onChange={(e) => setNotes(e.target.value)}
-  disabled={isStarting}
-  className="w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-  placeholder="Quick note for this session..."
-  maxLength={500}
-/>
+              list="preset-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isStarting}
+              className="w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              placeholder="Quick note for this session..."
+              maxLength={500}
+            />
 
-<datalist id="preset-notes">
-  <option value="Ainka task " />
-  <option value="Kuku task " />
-</datalist>
-
+            <datalist id="preset-notes">
+              <option value="Ainka: " />
+              <option value="Kuku: " />
+              <option value="Freelancer: " />
+              <option value="Personal: " />
+              <option value="Learning: " />
+              <option value="Other: " />
+            </datalist>
           </div>
         )}
       </div>
@@ -275,42 +278,42 @@ export default function HomePage() {
 
             {!isLoading &&
               sessions.map((s) => {
-                const isRunningRow = !s.endAt && s.id === currentSession?.id;
+                const isRunningRow = !s.endAt && s.id === currentSession?.id
 
-                const start = new Date(s.startAt).toLocaleTimeString("vi-VN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  timeZone: "Asia/Ho_Chi_Minh",
-                });
+                const start = new Date(s.startAt).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  timeZone: 'Asia/Ho_Chi_Minh',
+                })
 
                 const end = s.endAt
-                  ? new Date(s.endAt).toLocaleTimeString("vi-VN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      timeZone: "Asia/Ho_Chi_Minh",
+                  ? new Date(s.endAt).toLocaleTimeString('vi-VN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      timeZone: 'Asia/Ho_Chi_Minh',
                     })
                   : isRunningRow
-                  ? "Running..."
-                  : "-";
+                    ? 'Running...'
+                    : '-'
 
                 const duration =
                   s.durationSeconds != null
                     ? formatHMS(s.durationSeconds)
                     : isRunningRow
-                    ? formatHMS(elapsed)
-                    : "-";
+                      ? formatHMS(elapsed)
+                      : '-'
 
-                const isMenuOpen = menuOpenId === s.id;
+                const isMenuOpen = menuOpenId === s.id
 
                 return (
                   <tr
                     key={s.id}
                     className={[
-                      "border-t",
-                      isRunningRow ? "bg-orange-50" : "odd:bg-white even:bg-gray-50",
-                    ].join(" ")}
+                      'border-t',
+                      isRunningRow ? 'bg-orange-50' : 'odd:bg-white even:bg-gray-50',
+                    ].join(' ')}
                   >
                     {/* Start */}
                     <td className="px-3 sm:px-4 py-2 relative">
@@ -335,13 +338,11 @@ export default function HomePage() {
                     </td>
 
                     {/* Device */}
-                    <td className="px-3 sm:px-4 py-2 hidden sm:table-cell">
-                      {s.device ?? "-"}
-                    </td>
+                    <td className="px-3 sm:px-4 py-2 hidden sm:table-cell">{s.device ?? '-'}</td>
 
                     {/* Notes */}
                     <td className="px-3 sm:px-4 py-2">
-                      <span title={s.notes || ""}>{shorten(s.notes, 20)}</span>
+                      <span title={s.notes || ''}>{shorten(s.notes, 20)}</span>
                     </td>
 
                     {/* Actions */}
@@ -355,7 +356,10 @@ export default function HomePage() {
                         aria-label="Open row menu"
                       >
                         <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-600">
-                          <path fill="currentColor" d="M12 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4"/>
+                          <path
+                            fill="currentColor"
+                            d="M12 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4"
+                          />
                         </svg>
                       </button>
 
@@ -371,7 +375,10 @@ export default function HomePage() {
                           >
                             {/* trash icon */}
                             <svg viewBox="0 0 24 24" className="w-4 h-4">
-                              <path fill="currentColor" d="M9 3h6v2h5v2H4V5h5zm1 6h2v8h-2zm4 0h2v8h-2z"/>
+                              <path
+                                fill="currentColor"
+                                d="M9 3h6v2h5v2H4V5h5zm1 6h2v8h-2zm4 0h2v8h-2z"
+                              />
                             </svg>
                             Delete
                           </button>
@@ -379,17 +386,17 @@ export default function HomePage() {
                       )}
                     </td>
                   </tr>
-                );
+                )
               })}
           </tbody>
         </table>
       </div>
     </main>
-  );
+  )
 }
 
 /** Simple spinner icon */
-function Spinner({ className = "w-4 h-4" }: { className?: string }) {
+function Spinner({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" aria-hidden="true">
       <circle
@@ -401,11 +408,7 @@ function Spinner({ className = "w-4 h-4" }: { className?: string }) {
         strokeWidth="4"
         fill="none"
       />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4z"
-      />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4z" />
     </svg>
-  );
+  )
 }
