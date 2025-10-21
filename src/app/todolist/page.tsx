@@ -159,12 +159,13 @@ export default function TodoPage() {
           items={m.items}
           subtasksMap={m.subtasks}
           subFormOpen={m.subFormOpen}
-          setSubFormOpen={m.setSubFormOpen as any}
-          onOpenEdit={(it) => m.openEdit(it, fmtDateInput)}
+          setSubFormOpen={m.setSubFormOpen}
+          onOpenEdit={(t) => m.openEdit(t, fmtDateInput)}
           onDelete={m.onDelete}
           onCreateSub={m.onCreateSub}
-          onLoadMore={() => hasMore && m.setPage(m.page + 1)}
-          hasMore={hasMore}
+          onLoadMore={() => {}}
+          hasMore={false}
+          isLoadingMore={false}
         />
       )}
 

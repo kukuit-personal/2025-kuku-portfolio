@@ -4,28 +4,29 @@ export function Pagination({
   total,
   page,
   pageSize,
-  setPage, // giữ để không breaking, nhưng không dùng
+  setPage,
 }: {
   total: number
   page: number
   pageSize: number
   setPage: (n: number) => void
 }) {
-  const loaded = Math.min(page * pageSize, total)
-  const start = total > 0 ? 1 : 0
-  const end = loaded
+  const loadedStart = total > 0 ? (page - 1) * pageSize + 1 : 0
+  const loadedEnd = Math.min(page * pageSize, total)
   const maxPage = Math.max(1, Math.ceil(total / pageSize))
-  const percent = total > 0 ? Math.round((loaded / total) * 100) : 0
+
+  const canPrev = page > 1
+  const canNext = page < maxPage
 
   return (
     <div className="rounded-md border bg-white p-3 sm:p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="text-sm text-gray-700">
           {total > 0 ? (
             <>
               Showing{' '}
               <strong>
-                {start}–{end}
+                {loadedStart}–{loadedEnd}
               </strong>{' '}
               of <strong>{total}</strong>
               <span className="ml-2 text-gray-500">
@@ -40,15 +41,22 @@ export function Pagination({
           )}
         </div>
 
-        <div className="min-w-[160px]">
-          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
-            <div
-              className="h-full bg-indigo-500"
-              style={{ width: `${percent}%` }}
-              aria-label="Loaded percent"
-            />
-          </div>
-          <div className="mt-1 text-[11px] text-gray-500 text-right">{percent}% loaded</div>
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => canPrev && setPage(page - 1)}
+            disabled={!canPrev}
+            className="px-3 py-1.5 rounded-md border text-sm bg-white disabled:opacity-60"
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => canNext && setPage(page + 1)}
+            disabled={!canNext}
+            className="px-3 py-1.5 rounded-md border text-sm bg-white disabled:opacity-60"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

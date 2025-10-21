@@ -1,220 +1,317 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { EllipsisVerticalIcon, PlusIcon } from './icons'
-import { Todo, PRIOS } from '../types'
+import { useEffect, useRef, useState } from 'react'
+import { Pencil, Trash2, PlusCircle, MoreHorizontal } from 'lucide-react'
 import { priorityBgText } from '../utils/priorityColor'
+import { fmtDateInput } from '../utils/date'
+import type { Todo } from '../types'
 
-// Form nhỏ tạo subtask
-type SubForm = { title: string; dueAt: string; priority: Todo['priority'] }
+type SubNewPayload = {
+  title: string
+  priority: Todo['priority']
+  state: Todo['state']
+  dueAt: string
+}
 
 type Props = {
   item: Todo
-  subtasks: Todo[]
-  subFormOpen: boolean
-  onOpenSubForm: (open: boolean) => void
-  onOpenEdit: (it: Todo) => void
+  subtasks?: Todo[]
+  isSubFormOpen?: boolean
+  // actions
+  onOpenEdit: (todo: Todo) => void
   onDelete: (id: string) => void
-  onCreateSub: (p: SubForm) => Promise<void>
+  onToggleSubForm: (id: string, open?: boolean) => void
+  onCreateSub: (parentId: string, p: SubNewPayload) => Promise<void>
 }
 
-export function TodoCard({
+const PRIOS: Todo['priority'][] = ['low', 'normal', 'high', 'urgent', 'critical']
+const STATES: Todo['state'][] = [
+  'todo',
+  'in_progress',
+  'waiting',
+  'blocked',
+  'done',
+  'canceled',
+  'archived',
+]
+
+// Helper: chuyển “in_progress” → “In Progress”
+function labelizeWord(s: string) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
+}
+
+export default function TodoCard({
   item,
-  subtasks,
-  subFormOpen,
-  onOpenSubForm,
+  subtasks = [],
+  isSubFormOpen,
   onOpenEdit,
   onDelete,
+  onToggleSubForm,
   onCreateSub,
 }: Props) {
-  const [subForm, setSubForm] = useState<SubForm>({
-    title: '',
-    dueAt: '',
-    priority: 'normal',
-  })
-  const [savingSub, setSavingSub] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [subMenuOpenId, setSubMenuOpenId] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  const dueStr = useMemo(() => (item.dueAt ? `Due ${item.dueAt}` : ''), [item.dueAt])
+  // Subtask form state
+  const [subTitle, setSubTitle] = useState('')
+  const [subPriority, setSubPriority] = useState<Todo['priority']>('normal')
+  const [subState, setSubState] = useState<Todo['state']>('todo')
+  const [subDue, setSubDue] = useState<string>('')
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target)) setMenuOpen(false)
+      if (!(target as HTMLElement).closest?.('[data-sub-menu]')) {
+        setSubMenuOpenId(null)
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setMenuOpen(false)
+        setSubMenuOpenId(null)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
 
   async function handleCreateSub() {
-    if (!subForm.title.trim()) return
-    try {
-      setSavingSub(true)
-      await onCreateSub(subForm)
-      setSubForm({ title: '', dueAt: '', priority: 'normal' })
-      onOpenSubForm(false)
-    } finally {
-      setSavingSub(false)
-    }
+    const t = subTitle.trim()
+    if (!t) return
+    await onCreateSub(item.id, {
+      title: t,
+      priority: subPriority,
+      state: subState,
+      dueAt: subDue,
+    })
+    setSubTitle('')
+    setSubPriority('normal')
+    setSubState('todo')
+    setSubDue('')
   }
 
   return (
-    <div className="rounded-2xl border bg-white shadow-sm p-4 sm:p-5 relative">
+    <div className="relative rounded-md border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-3">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h3 className="text-base sm:text-lg font-semibold leading-snug line-clamp-1">
-          {item.title}
-        </h3>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>
+          {item.description ? (
+            <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+          ) : null}
+        </div>
 
-        <div className="flex items-center gap-1">
+        {/* Actions menu trigger */}
+        <div className="relative" ref={menuRef}>
           <button
-            className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
-            onClick={() => onOpenEdit(item)}
-            title="Edit"
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Actions"
           >
-            Edit
-          </button>
-          <button
-            className="text-xs px-2 py-1 rounded border border-red-500 text-red-600 hover:bg-red-50"
-            onClick={() => onDelete(item.id)}
-            title="Delete"
-          >
-            Delete
+            <MoreHorizontal className="h-5 w-5" />
           </button>
 
-          <button
-            className="shrink-0 text-gray-500 hover:text-gray-700"
-            title="More actions"
-            onClick={(e) => {
-              e.stopPropagation()
-              // giữ chỗ cho menu nếu bạn đang có
-            }}
-          >
-            <EllipsisVerticalIcon className="w-5 h-5" />
-          </button>
+          {menuOpen && (
+            <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onOpenEdit(item)
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </button>
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onDelete(item.id)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onToggleSubForm(item.id, !isSubFormOpen)
+                }}
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add subtask
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Description */}
-      {item.description ? (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
-      ) : null}
-
-      {/* Badges: Category, State, Due, Priority */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      {/* Badges (rounded-full giữ nguyên) */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         {item.category ? (
-          <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-800 px-2.5 py-0.5 text-xs font-medium">
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-800">
             {item.category}
           </span>
         ) : null}
-
         {item.state ? (
-          <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-800 px-2.5 py-0.5 text-xs font-medium">
-            {/* bạn có thể có label mapping ở nơi khác, ở đây dùng raw */}
-            {item.state.replace('_', ' ')}
+          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-800">
+            {labelizeWord(item.state)}
           </span>
         ) : null}
-
-        {dueStr ? (
-          <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-800 px-2.5 py-0.5 text-xs font-medium">
-            {dueStr}
-          </span>
-        ) : null}
-
-        {/* PRIORITY chip (màu theo util) */}
-        {item.priority ? (
-          <span
-            className={[
-              'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-              priorityBgText(item.priority),
-            ].join(' ')}
-          >
-            {item.priority[0].toUpperCase() + item.priority.slice(1)}
+        <span className={`rounded-full px-2 py-0.5 ${priorityBgText(item.priority)}`}>
+          {labelizeWord(item.priority)}
+        </span>
+        {item.dueAt ? (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">
+            Due {fmtDateInput(item.dueAt)}
           </span>
         ) : null}
       </div>
 
-      {/* Subtasks */}
-      {subtasks?.length ? (
-        <div className="mt-2 space-y-2">
-          {subtasks.map((st) => (
-            <div
-              key={st.id}
-              className="rounded-md border bg-gray-50 px-3 py-2 text-sm flex items-center justify-between"
-            >
-              <div className="min-w-0">
-                <div className="font-medium line-clamp-1">{st.title}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px]">
-                  <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-800 px-2 py-0.5">
-                    {st.priority}
-                  </span>
-                  {st.state ? (
-                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-800 px-2 py-0.5">
-                      {st.state.replace('_', ' ')}
-                    </span>
-                  ) : null}
-                  {st.dueAt ? (
-                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-800 px-2 py-0.5">
-                      {st.dueAt}
-                    </span>
-                  ) : null}
+      {/* Subtasks list */}
+      {subtasks.length > 0 && (
+        <ul className="mt-1 space-y-2">
+          {subtasks.map((s, i) => {
+            const zebra = i % 2 === 0 ? 'bg-gray-100' : 'bg-white'
+            return (
+              <li key={s.id} className={`rounded-md border border-gray-200 p-3 ${zebra}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm text-gray-900 break-words">{s.title}</div>
+                    {/* badges: state → priority → due */}
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                      {s.state ? (
+                        <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-800">
+                          {labelizeWord(s.state)}
+                        </span>
+                      ) : null}
+                      <span className={`rounded-full px-2 py-0.5 ${priorityBgText(s.priority)}`}>
+                        {labelizeWord(s.priority)}
+                      </span>
+                      {s.dueAt ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">
+                          Due {fmtDateInput(s.dueAt)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Subtask actions: menu ... */}
+                  <div className="relative" data-sub-menu>
+                    <button
+                      type="button"
+                      onClick={() => setSubMenuOpenId((prev) => (prev === s.id ? null : s.id))}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-200"
+                      aria-label="Subtask actions"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+
+                    {subMenuOpenId === s.id && (
+                      <div className="absolute right-0 z-20 mt-2 w-36 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+                        <button
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                          onClick={() => {
+                            setSubMenuOpenId(null)
+                            onOpenEdit(s)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </button>
+                        <button
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                          onClick={() => {
+                            setSubMenuOpenId(null)
+                            onDelete(s.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500 mt-2">No subtasks.</p>
+              </li>
+            )
+          })}
+        </ul>
       )}
 
-      {/* Add subtask */}
-      <div className="mt-3">
-        {!subFormOpen ? (
-          <button
-            onClick={() => onOpenSubForm(true)}
-            className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded border hover:bg-gray-50"
-          >
-            <PlusIcon className="w-4 h-4" /> Add subtask
-          </button>
-        ) : (
-          <div className="rounded-md border bg-gray-50 p-3 space-y-2">
+      {/* Add subtask form */}
+      {isSubFormOpen && (
+        <div className="mt-1 rounded-md border border-gray-200 p-3">
+          <div className="flex flex-col gap-2">
+            <input
+              value={subTitle}
+              onChange={(e) => setSubTitle(e.target.value)}
+              placeholder="Subtask title…"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input
-                className="rounded border px-2 py-1 text-sm"
-                placeholder="Title"
-                value={subForm.title}
-                onChange={(e) => setSubForm((s) => ({ ...s, title: e.target.value }))}
-              />
-              <input
-                type="date"
-                className="rounded border px-2 py-1 text-sm"
-                value={subForm.dueAt}
-                onChange={(e) => setSubForm((s) => ({ ...s, dueAt: e.target.value }))}
-              />
+              {/* State */}
               <select
-                className="rounded border px-2 py-1 text-sm"
-                value={subForm.priority}
-                onChange={(e) =>
-                  setSubForm((s) => ({ ...s, priority: e.target.value as Todo['priority'] }))
-                }
+                value={subState}
+                onChange={(e) => setSubState(e.target.value as Todo['state'])}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                {PRIOS.map((p) => (
-                  <option key={p} value={p}>
-                    {p[0].toUpperCase() + p.slice(1)}
+                {STATES.map((st) => (
+                  <option key={st} value={st}>
+                    {labelizeWord(st)}
                   </option>
                 ))}
               </select>
+
+              {/* Priority */}
+              <select
+                value={subPriority}
+                onChange={(e) => setSubPriority(e.target.value as Todo['priority'])}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                {PRIOS.map((p) => (
+                  <option key={p} value={p}>
+                    {labelizeWord(p)}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={subDue}
+                onChange={(e) => setSubDue(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
             </div>
 
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex justify-end gap-2 pt-1">
               <button
-                className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm"
-                onClick={() => onOpenSubForm(false)}
-                disabled={savingSub}
+                onClick={() => onToggleSubForm(item.id, false)}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                className="px-3 py-1.5 rounded border border-green-600 bg-green-500 text-white hover:bg-green-600 disabled:opacity-60 text-sm"
                 onClick={handleCreateSub}
-                disabled={savingSub}
+                className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
               >
-                {savingSub ? 'Saving…' : 'Add'}
+                <PlusCircle className="h-4 w-4" />
+                Add subtask
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
