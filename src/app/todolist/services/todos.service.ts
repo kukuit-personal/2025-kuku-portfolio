@@ -84,15 +84,17 @@ export async function deleteTodo(id: string) {
   }
 }
 
+// === CẬP NHẬT: thêm `state` cho tạo subtask ===
 export async function createSubTask(
   parentId: string,
-  data: { title: string; dueAt: string; priority: TodoPriority }
+  data: { title: string; dueAt: string; priority: TodoPriority; state: TodoState }
 ) {
   return createTodo({
     title: data.title.trim(),
     dueAt: data.dueAt || null,
     parentId,
     priority: data.priority,
-    state: 'todo',
+    state: data.state ?? 'todo',
+    // giữ nguyên category mặc định ở backend (nếu backend set), không truyền ở đây
   } as any)
 }

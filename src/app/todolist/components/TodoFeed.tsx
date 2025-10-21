@@ -1,7 +1,7 @@
 'use client'
 
 import { Todo } from '../types'
-import { TodoCard } from './TodoCard'
+import TodoCard from './TodoCard'
 
 export function TodoFeed({
   items,
@@ -13,6 +13,7 @@ export function TodoFeed({
   onCreateSub,
   onLoadMore,
   hasMore,
+  isLoadingMore,
 }: {
   items: Todo[]
   subtasksMap: Record<string, Todo[]>
@@ -22,38 +23,30 @@ export function TodoFeed({
   onDelete: (id: string) => void
   onCreateSub: (
     parentId: string,
-    p: { title: string; dueAt: string; priority: Todo['priority'] }
+    p: { title: string; dueAt: string; priority: Todo['priority']; state: Todo['state'] }
   ) => Promise<void>
   onLoadMore: () => void
   hasMore: boolean
+  isLoadingMore: boolean
 }) {
   return (
     <>
       {/* Tối đa 2 card / hàng */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4">
         {items.map((it) => (
           <TodoCard
             key={it.id}
             item={it}
             subtasks={subtasksMap[it.id] ?? []}
-            subFormOpen={!!subFormOpen[it.id]}
-            onOpenSubForm={(open) => setSubFormOpen((m) => ({ ...m, [it.id]: open }))}
+            isSubFormOpen={!!subFormOpen[it.id]}
+            onToggleSubForm={(_, open) =>
+              setSubFormOpen((m) => ({ ...m, [it.id]: open ?? !m[it.id] }))
+            }
             onOpenEdit={onOpenEdit}
             onDelete={onDelete}
-            onCreateSub={(p) => onCreateSub(it.id, p)}
+            onCreateSub={(parentId, payload) => onCreateSub(parentId, payload)}
           />
         ))}
-      </div>
-
-      <div className="flex justify-center mt-5">
-        {hasMore && (
-          <button
-            onClick={onLoadMore}
-            className="px-4 py-2 rounded-md border bg-white hover:bg-gray-50"
-          >
-            Load more
-          </button>
-        )}
       </div>
     </>
   )

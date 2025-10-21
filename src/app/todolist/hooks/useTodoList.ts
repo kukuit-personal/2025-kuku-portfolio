@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FilterMode, Status, Todo, TodoPriority, TodoState, TodoCategory } from '../types'
 import {
   buildQueryRoot,
@@ -12,7 +12,7 @@ import {
   updateTodo as apiUpdate,
 } from '../services/todos.service'
 
-// Form type rõ ràng để TS không suy luận sai
+// Form type
 type FormState = {
   title: string
   description: string
@@ -30,7 +30,7 @@ export function useTodoList() {
     priorities: 'all',
   })
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(25) // default 25
 
   // ===== List state =====
   const [items, setItems] = useState<Todo[]>([])
@@ -72,29 +72,8 @@ export function useTodoList() {
   })
   const [updating, setUpdating] = useState(false)
 
-  // ===== Row menu =====
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      const t = e.target as HTMLElement
-      if (!t.closest?.('[data-row-menu]')) setMenuOpenId(null)
-    }
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMenuOpenId(null)
-        setEditing(null)
-      }
-    }
-    document.addEventListener('click', onDoc)
-    document.addEventListener('keydown', onEsc)
-    return () => {
-      document.removeEventListener('click', onDoc)
-      document.removeEventListener('keydown', onEsc)
-    }
-  }, [])
-
-  // ===== Prefetch subtasks ngay khi load =====
-  async function prefetchSubtasksFor(list: Todo[]) {
+  // ===== Helpers =====
+  const prefetchSubtasksFor = useCallback(async (list: Todo[]) => {
     if (!list?.length) return
     await Promise.allSettled(
       list.map(async (it) => {
@@ -106,18 +85,17 @@ export function useTodoList() {
         }
       })
     )
-  }
+  }, [])
 
-  // ===== Load root list =====
-  async function load() {
+  const fetchList = useCallback(async () => {
     setIsLoading(true)
     try {
       const url = buildQueryRoot(page, pageSize, filters)
       const data = await listTodos(url)
-      const list = data.items ?? []
-      setItems(list)
+      const batch = data.items ?? []
       setTotal(data.total ?? 0)
-      await prefetchSubtasksFor(list)
+      setItems(batch)
+      await prefetchSubtasksFor(batch)
     } catch (e: any) {
       alert(e?.message || 'Load failed')
       setItems([])
@@ -125,14 +103,19 @@ export function useTodoList() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page, pageSize, filters, prefetchSubtasksFor])
 
   useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, filters])
+    fetchList()
+  }, [fetchList])
 
-  // ===== Load subtasks cho 1 parent (khi thêm sub xong) =====
+  // ===== Page size helper (reset về trang 1) =====
+  function onChangePageSize(n: number) {
+    setPage(1)
+    setPageSize(n)
+  }
+
+  // ===== Load subtasks cho 1 parent =====
   async function loadSub(parentId: string) {
     try {
       const data = await listSubtasks(parentId)
@@ -162,8 +145,9 @@ export function useTodoList() {
       } as any)
 
       setForm(initialForm)
-      await load()
-      setAddOpen(false) // đóng form sau khi tạo xong
+      setPage(1)
+      await fetchList()
+      setAddOpen(false)
     } catch (e: any) {
       alert(e?.message || 'Cannot create')
     } finally {
@@ -198,7 +182,7 @@ export function useTodoList() {
         status: editForm.status,
       } as any)
       setEditing(null)
-      await load()
+      await fetchList()
     } catch (e: any) {
       alert(e?.message || 'Cannot update')
     } finally {
@@ -207,19 +191,24 @@ export function useTodoList() {
   }
 
   async function onDelete(id: string) {
-    setMenuOpenId(null)
     if (!confirm('Delete this todo? (soft delete)')) return
     try {
       await apiDelete(id)
-      await load()
+      // tính lại page nếu cần
+      const newTotal = total - 1
+      const maxPage = Math.max(1, Math.ceil(newTotal / pageSize))
+      const nextPage = Math.min(page, maxPage)
+      if (nextPage !== page) setPage(nextPage)
+      await fetchList()
     } catch (e: any) {
       alert(e?.message || 'Cannot delete')
     }
   }
 
+  // === Subtask: tạo có state ===
   async function onCreateSub(
     parentId: string,
-    data: { title: string; dueAt: string; priority: TodoPriority }
+    data: { title: string; dueAt: string; priority: TodoPriority; state: TodoState }
   ) {
     try {
       await createSubTask(parentId, data)
@@ -239,7 +228,8 @@ export function useTodoList() {
     page,
     setPage,
     pageSize,
-    setPageSize,
+    setPageSize, // vẫn export
+    onChangePageSize, // dùng cho FiltersBar
 
     // list
     items,
@@ -252,7 +242,6 @@ export function useTodoList() {
     subFormOpen,
     setSubFormOpen,
 
-    // (expanded nếu còn dùng)
     expanded,
     setExpanded,
 
@@ -276,8 +265,6 @@ export function useTodoList() {
     onUpdate,
 
     // actions
-    menuOpenId,
-    setMenuOpenId,
     onDelete,
 
     // sub create/load
@@ -285,6 +272,6 @@ export function useTodoList() {
     loadSub,
 
     // manual reload
-    load,
+    fetchList,
   }
 }
