@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 // ===== Types =====
 type Status = 'active' | 'disabled'
@@ -357,7 +357,7 @@ export default function HealthLogPage() {
               type="date"
               value={formDate}
               onChange={(e) => setFormDate(e.target.value)}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
               title="Entry date"
               aria-label="Entry date"
             />
@@ -371,7 +371,7 @@ export default function HealthLogPage() {
               value={form.weight}
               onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
               placeholder="57"
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
               inputMode="decimal"
             />
           </div>
@@ -384,7 +384,7 @@ export default function HealthLogPage() {
               value={form.morning}
               onChange={(e) => setForm((f) => ({ ...f, morning: e.target.value }))}
               placeholder="Tập bóng"
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
             />
           </div>
 
@@ -395,7 +395,7 @@ export default function HealthLogPage() {
               list="dlGym"
               value={form.gym}
               onChange={(e) => setForm((f) => ({ ...f, gym: e.target.value }))}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
             />
           </div>
 
@@ -406,7 +406,7 @@ export default function HealthLogPage() {
               list="dlAfternoon"
               value={form.afternoon}
               onChange={(e) => setForm((f) => ({ ...f, afternoon: e.target.value }))}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
             />
           </div>
 
@@ -417,7 +417,7 @@ export default function HealthLogPage() {
               list="dlNoEat"
               value={form.noEatAfter}
               onChange={(e) => setForm((f) => ({ ...f, noEatAfter: e.target.value }))}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
             />
           </div>
 
@@ -428,7 +428,7 @@ export default function HealthLogPage() {
               list="dlCalories"
               value={form.calories}
               onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
               inputMode="numeric"
             />
           </div>
@@ -440,7 +440,7 @@ export default function HealthLogPage() {
               list="dlGout"
               value={form.goutTreatment}
               onChange={(e) => setForm((f) => ({ ...f, goutTreatment: e.target.value }))}
-              className="w-full rounded-md border px-2 py-1 text-sm"
+              className="w-full rounded-md border px-3 py-1.5 text-sm"
               inputMode="numeric"
             />
           </div>
@@ -450,7 +450,7 @@ export default function HealthLogPage() {
             <label className="block text-xs text-gray-600 mb-1">&nbsp;</label>
             <button
               onClick={genDefaults}
-              className="w-full px-2 py-1 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
+              className="w-full px-3 py-1.5 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
               type="button"
               title="Generate default values"
             >
@@ -461,7 +461,7 @@ export default function HealthLogPage() {
             <label className="block text-xs text-gray-600 mb-1">&nbsp;</label>
             <button
               onClick={clearForm}
-              className="w-full px-2 py-1 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
+              className="w-full px-3 py-1.5 rounded-md border bg-gray-100 hover:bg-gray-200 text-sm"
               type="button"
               title="Clear form"
             >
@@ -540,7 +540,7 @@ export default function HealthLogPage() {
             setPage(1)
             setFilterMode(e.target.value as FilterMode)
           }}
-          className="px-2 py-1 rounded-md border text-sm"
+          className="px-3 py-1.5 rounded-md border text-sm"
         >
           <option value="last7">Last 7 days</option>
           <option value="thisMonth">This month</option>
@@ -556,7 +556,7 @@ export default function HealthLogPage() {
             setPage(1)
             setPageSize(Number(e.target.value))
           }}
-          className="px-2 py-1 rounded-md border text-sm"
+          className="px-3 py-1.5 rounded-md border text-sm"
         >
           <option value={10}>10</option>
           <option value={20}>20</option>
@@ -564,13 +564,12 @@ export default function HealthLogPage() {
         </select>
       </div>
 
-      {/* Table */}
       <div className="rounded-md border bg-white">
         <table className="min-w-full text-xs sm:text-sm">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 sm:px-4 py-2 text-left">Date</th>
-              <th className="px-3 sm:px-4 py-2 text-right">Weight</th>
+              <th className="px-3 sm:px-4 py-2 text-left sm:text-right">Weight</th>
               {/* Các cột chi tiết chỉ hiện từ lg trở lên */}
               <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">Morning</th>
               <th className="px-3 sm:px-4 py-2 text-left hidden lg:table-cell">Gym</th>
@@ -617,16 +616,15 @@ export default function HealthLogPage() {
                 const rowTone = it.status === 'disabled' ? 'bg-gray-100 text-gray-500' : stripe
 
                 return (
-                  <>
+                  <React.Fragment key={it.id}>
                     <tr
-                      key={it.id}
                       className={[
                         'border-t',
                         isSun ? 'border-t border-gray-400 ' : '',
                         rowTone,
                       ].join(' ')}
                     >
-                      {/* Date + (Wday) — Sunday: text red + border-top red */}
+                      {/* Date + (Wday) — Sunday: text red + border-top riêng */}
                       <td
                         className={[
                           'px-3 sm:px-4 py-1',
@@ -637,8 +635,8 @@ export default function HealthLogPage() {
                         {it.date ? `${it.date}(${wdShort})` : ''}
                       </td>
 
-                      {/* Weight */}
-                      <td className="px-3 sm:px-4 py-1 text-right">
+                      {/* Weight: trên mobile căn trái, desktop căn phải */}
+                      <td className="px-3 sm:px-4 py-1 text-left sm:text-right">
                         {it.weight ? Number(it.weight).toFixed(2) : ''}
                       </td>
 
@@ -751,13 +749,13 @@ export default function HealthLogPage() {
                       <td colSpan={3} className="px-3 sm:px-4 pb-2">
                         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
                           <div className="inline-flex gap-2 min-w-max">
-                            {/* Morning */}
+                            {/* Mor */}
                             <div
-                              className={`px-2 py-1 rounded border ${
+                              className={`px-1.5 py-1 rounded border ${
                                 it.morning?.trim() ? 'bg-green-300' : 'bg-white'
                               }`}
                             >
-                              <div className="text-[10px] uppercase text-gray-500">Morning</div>
+                              <div className="text-[10px] uppercase text-gray-500">Mor</div>
                               <div className="text-sm" title={it.morning || ''}>
                                 {shorten(it.morning, 20)}
                               </div>
@@ -765,7 +763,7 @@ export default function HealthLogPage() {
 
                             {/* Gym */}
                             <div
-                              className={`px-2 py-1 rounded border ${
+                              className={`px-1.5 py-1 rounded border ${
                                 it.gym?.trim() ? 'bg-green-300' : 'bg-white'
                               }`}
                             >
@@ -775,43 +773,47 @@ export default function HealthLogPage() {
                               </div>
                             </div>
 
-                            {/* Afternoon */}
+                            {/* Atn */}
                             <div
-                              className={`px-2 py-1 rounded border ${
+                              className={`px-1.5 py-1 rounded border ${
                                 it.afternoon?.trim() ? 'bg-green-300' : 'bg-white'
                               }`}
                             >
-                              <div className="text-[10px] uppercase text-gray-500">Afternoon</div>
+                              <div className="text-[10px] uppercase text-gray-500">Atn</div>
                               <div className="text-sm" title={it.afternoon || ''}>
                                 {shorten(it.afternoon, 18)}
                               </div>
                             </div>
 
-                            {/* NoEat18:30 */}
+                            {/* Noe */}
                             <div
-                              className={`px-2 py-1 rounded border ${
+                              className={`px-1.5 py-1 rounded border ${
                                 it.noEatAfter?.trim() ? 'bg-green-300' : 'bg-white'
                               }`}
                             >
-                              <div className="text-[10px] uppercase text-gray-500">NoEat18:30</div>
+                              <div className="text-[10px] uppercase text-gray-500">Noe</div>
                               <div className="text-sm" title={it.noEatAfter || ''}>
                                 {shorten(it.noEatAfter, 10)}
                               </div>
                             </div>
 
-                            {/* Kcal */}
-                            <div className={`px-2 py-1 rounded border ${kcalBgClass(it.calories)}`}>
-                              <div className="text-[10px] uppercase text-gray-500">Kcal</div>
+                            {/* Kcl */}
+                            <div
+                              className={`px-1.5 py-1 rounded border ${kcalBgClass(it.calories)}`}
+                            >
+                              <div className="text-[10px] uppercase text-gray-500">Kcl</div>
                               <div className="text-sm">
                                 {it.calories != null ? it.calories : ''}
                               </div>
                             </div>
 
-                            {/* Gout */}
+                            {/* Gut */}
                             <div
-                              className={`px-2 py-1 rounded border ${goutBgClass(it.goutTreatment)}`}
+                              className={`px-1.5 py-1 rounded border ${goutBgClass(
+                                it.goutTreatment
+                              )}`}
                             >
-                              <div className="text-[10px] uppercase text-gray-500">Gout</div>
+                              <div className="text-[10px] uppercase text-gray-500">Gut</div>
                               <div className="text-sm">
                                 {it.goutTreatment != null ? it.goutTreatment : ''}
                               </div>
@@ -820,7 +822,7 @@ export default function HealthLogPage() {
                         </div>
                       </td>
                     </tr>
-                  </>
+                  </React.Fragment>
                 )
               })}
           </tbody>
@@ -845,7 +847,7 @@ export default function HealthLogPage() {
             <button
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page <= 1}
-              className="px-3 py-1 rounded-md border hover:bg-gray-50 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
             >
               Prev
             </button>
@@ -858,7 +860,7 @@ export default function HealthLogPage() {
                 setPage((p) => Math.min(p + 1, maxP))
               }}
               disabled={page >= Math.ceil(total / pageSize) || total === 0}
-              className="px-3 py-1 rounded-md border hover:bg-gray-50 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
             >
               Next
             </button>
@@ -897,7 +899,7 @@ export default function HealthLogPage() {
                   type="date"
                   value={editForm.date}
                   onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -908,7 +910,7 @@ export default function HealthLogPage() {
                   list="dlWeight"
                   value={editForm.weight}
                   onChange={(e) => setEditForm((f) => ({ ...f, weight: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                   inputMode="decimal"
                 />
               </div>
@@ -920,7 +922,7 @@ export default function HealthLogPage() {
                   list="dlMorning"
                   value={editForm.morning}
                   onChange={(e) => setEditForm((f) => ({ ...f, morning: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -931,7 +933,7 @@ export default function HealthLogPage() {
                   list="dlGym"
                   value={editForm.gym}
                   onChange={(e) => setEditForm((f) => ({ ...f, gym: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -942,7 +944,7 @@ export default function HealthLogPage() {
                   list="dlAfternoon"
                   value={editForm.afternoon}
                   onChange={(e) => setEditForm((f) => ({ ...f, afternoon: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -953,7 +955,7 @@ export default function HealthLogPage() {
                   list="dlNoEat"
                   value={editForm.noEatAfter}
                   onChange={(e) => setEditForm((f) => ({ ...f, noEatAfter: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 />
               </div>
 
@@ -964,7 +966,7 @@ export default function HealthLogPage() {
                   list="dlCalories"
                   value={editForm.calories}
                   onChange={(e) => setEditForm((f) => ({ ...f, calories: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                   inputMode="numeric"
                 />
               </div>
@@ -976,7 +978,7 @@ export default function HealthLogPage() {
                   list="dlGout"
                   value={editForm.goutTreatment}
                   onChange={(e) => setEditForm((f) => ({ ...f, goutTreatment: e.target.value }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                   inputMode="numeric"
                 />
               </div>
@@ -987,7 +989,7 @@ export default function HealthLogPage() {
                 <select
                   value={editForm.status}
                   onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as Status }))}
-                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  className="w-full rounded-md border px-3 py-1.5 text-sm"
                 >
                   <option value="active">active</option>
                   <option value="disabled">disabled</option>
