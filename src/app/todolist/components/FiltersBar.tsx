@@ -72,7 +72,7 @@ export function FiltersBar({
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => setShowFilters((v) => !v)}
-          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm bg-white hover:bg-gray-50"
         >
           <SlidersHorizontal className="w-4 h-4" />
           {showFilters ? 'Hide Filters' : 'Show Filters'}
@@ -81,68 +81,71 @@ export function FiltersBar({
 
       {/* Panel filter */}
       {showFilters && (
-        <div className="rounded-md border bg-white p-3 sm:p-4 flex flex-col gap-4">
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <MultiSelect
-              placeholder="Select categories"
-              options={cateOpts}
-              value={cateAll ? 'all' : categories}
-              onChange={(v) => {
-                if (v === 'all') {
-                  setCateAll(true)
-                  setCategories([])
-                } else {
-                  setCateAll(false)
-                  setCategories(v as TodoCategory[])
-                }
-              }}
-              allEnabled
-              allLabel="All"
-            />
+        <div className="rounded-lg border bg-white p-3 sm:p-4 flex flex-col gap-4">
+          {/* Hàng 1: Category - State - Priority */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            {/* Category */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <MultiSelect
+                placeholder="Select categories"
+                options={cateOpts}
+                value={cateAll ? 'all' : categories}
+                onChange={(v) => {
+                  if (v === 'all') {
+                    setCateAll(true)
+                    setCategories([])
+                  } else {
+                    setCateAll(false)
+                    setCategories(v as TodoCategory[])
+                  }
+                }}
+                allEnabled
+                allLabel="All"
+              />
+            </div>
+
+            {/* State */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+              <MultiSelect
+                placeholder="Select states"
+                options={stateOpts}
+                value={states}
+                onChange={(v) => setStates(Array.isArray(v) ? (v as TodoState[]) : [])}
+              />
+            </div>
+
+            {/* Priority */}
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <MultiSelect
+                placeholder="Select priorities"
+                options={prioOpts}
+                value={prioAll ? 'all' : priorities}
+                onChange={(v) => {
+                  if (v === 'all') {
+                    setPrioAll(true)
+                    setPriorities([])
+                  } else {
+                    setPrioAll(false)
+                    setPriorities(v as TodoPriority[])
+                  }
+                }}
+                allEnabled
+                allLabel="All"
+              />
+            </div>
           </div>
 
-          {/* State */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-            <MultiSelect
-              placeholder="Select states"
-              options={stateOpts}
-              value={states}
-              onChange={(v) => setStates(Array.isArray(v) ? (v as TodoState[]) : [])}
-            />
-          </div>
-
-          {/* Priority */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-            <MultiSelect
-              placeholder="Select priorities"
-              options={prioOpts}
-              value={prioAll ? 'all' : priorities}
-              onChange={(v) => {
-                if (v === 'all') {
-                  setPrioAll(true)
-                  setPriorities([])
-                } else {
-                  setPrioAll(false)
-                  setPriorities(v as TodoPriority[])
-                }
-              }}
-              allEnabled
-              allLabel="All"
-            />
-          </div>
-
-          {/* Page size + Apply */}
-          <div className="flex flex-wrap items-end justify-between gap-3 border-t pt-3">
+          {/* Hàng 2: Page size + Apply */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 border-t pt-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Page size</label>
               <select
                 value={pageSize}
                 onChange={(e) => handleChangePageSize(Number(e.target.value))}
-                className="px-3 py-1.5 rounded-md border text-sm"
+                className="px-3 py-1.5 rounded-md border text-sm bg-white"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -151,12 +154,14 @@ export function FiltersBar({
               </select>
             </div>
 
-            <button
-              onClick={apply}
-              className="self-end px-4 py-2 rounded-md border border-indigo-600 bg-indigo-500 text-white text-sm hover:bg-indigo-600"
-            >
-              Apply filters
-            </button>
+            <div className="md:ml-auto">
+              <button
+                onClick={apply}
+                className="px-4 py-2 rounded-md border border-indigo-600 bg-indigo-500 text-white text-sm hover:bg-indigo-600"
+              >
+                Apply filters
+              </button>
+            </div>
           </div>
         </div>
       )}

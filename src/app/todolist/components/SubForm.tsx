@@ -17,6 +17,21 @@ export function SubForm({
   const [priority, setPriority] = useState<TodoPriority>('normal')
   const [saving, setSaving] = useState(false)
 
+  async function handleSubmit() {
+    if (!title.trim() || saving) return
+    try {
+      setSaving(true)
+      await onCreate({ title: title.trim(), dueAt, priority })
+      // reset sau khi tạo xong
+      setTitle('')
+      setDueAt('')
+      setPriority('normal')
+      onCancel() // nếu muốn giữ form mở thì bỏ dòng này
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="rounded border p-2 bg-white">
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
@@ -26,6 +41,7 @@ export function SubForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-md border px-2 py-1 text-sm"
+            disabled={saving}
           />
         </div>
         <div className="col-span-2">
@@ -34,6 +50,7 @@ export function SubForm({
             value={priority}
             onChange={(e) => setPriority(e.target.value as TodoPriority)}
             className="w-full rounded-md border px-2 py-1 text-sm"
+            disabled={saving}
           >
             {PRIOS.map((p) => (
               <option key={p} value={p}>
@@ -49,27 +66,21 @@ export function SubForm({
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
             className="w-full rounded-md border px-2 py-1 text-sm"
+            disabled={saving}
           />
         </div>
       </div>
+
       <div className="mt-2 flex justify-end gap-2">
-        <button onClick={onCancel} className="px-3 py-1 rounded-md border hover:bg-gray-50">
+        <button
+          onClick={onCancel}
+          className="px-3 py-1 rounded-md border hover:bg-gray-50 disabled:opacity-60"
+          disabled={saving}
+        >
           Cancel
         </button>
         <button
-          onClick={async () => {
-            if (!title.trim()) {
-              alert('Title is required')
-              return
-            }
-            if (saving) return
-            setSaving(true)
-            await onCreate({ title: title.trim(), dueAt, priority })
-            setSaving(false)
-            setTitle('')
-            setDueAt('')
-            setPriority('normal')
-          }}
+          onClick={handleSubmit}
           disabled={saving}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-600 bg-green-500 text-white hover:bg-green-600 active:bg-green-700 disabled:opacity-60"
         >

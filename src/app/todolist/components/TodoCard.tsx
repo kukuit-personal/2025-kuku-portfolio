@@ -5,6 +5,7 @@ import { Pencil, Trash2, PlusCircle, MoreHorizontal } from 'lucide-react'
 import { priorityBgText } from '../utils/priorityColor'
 import { fmtDateInput } from '../utils/date'
 import type { Todo } from '../types'
+import { Spinner } from './Spinner'
 
 type SubNewPayload = {
   title: string
@@ -58,6 +59,7 @@ export default function TodoCard({
   const [subPriority, setSubPriority] = useState<Todo['priority']>('normal')
   const [subState, setSubState] = useState<Todo['state']>('todo')
   const [subDue, setSubDue] = useState<string>('')
+  const [savingSub, setSavingSub] = useState(false) // Spinner + disable
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -83,17 +85,25 @@ export default function TodoCard({
 
   async function handleCreateSub() {
     const t = subTitle.trim()
-    if (!t) return
-    await onCreateSub(item.id, {
-      title: t,
-      priority: subPriority,
-      state: subState,
-      dueAt: subDue,
-    })
-    setSubTitle('')
-    setSubPriority('normal')
-    setSubState('todo')
-    setSubDue('')
+    if (!t || savingSub) return
+    try {
+      setSavingSub(true)
+      await onCreateSub(item.id, {
+        title: t,
+        priority: subPriority,
+        state: subState,
+        dueAt: subDue,
+      })
+      // reset fields
+      setSubTitle('')
+      setSubPriority('normal')
+      setSubState('todo')
+      setSubDue('')
+      // 🔹 Ẩn form sau khi thêm xong
+      onToggleSubForm(item.id, false)
+    } finally {
+      setSavingSub(false)
+    }
   }
 
   return (
@@ -155,7 +165,7 @@ export default function TodoCard({
         </div>
       </div>
 
-      {/* Badges (rounded-full giữ nguyên) */}
+      {/* Badges */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {item.category ? (
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-800">
@@ -256,15 +266,16 @@ export default function TodoCard({
               value={subTitle}
               onChange={(e) => setSubTitle(e.target.value)}
               placeholder="Subtask title…"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
+              disabled={savingSub}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {/* State */}
               <select
                 value={subState}
                 onChange={(e) => setSubState(e.target.value as Todo['state'])}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
+                disabled={savingSub}
               >
                 {STATES.map((st) => (
                   <option key={st} value={st}>
@@ -273,11 +284,11 @@ export default function TodoCard({
                 ))}
               </select>
 
-              {/* Priority */}
               <select
                 value={subPriority}
                 onChange={(e) => setSubPriority(e.target.value as Todo['priority'])}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
+                disabled={savingSub}
               >
                 {PRIOS.map((p) => (
                   <option key={p} value={p}>
@@ -290,23 +301,30 @@ export default function TodoCard({
                 type="date"
                 value={subDue}
                 onChange={(e) => setSubDue(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
+                disabled={savingSub}
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-1">
               <button
                 onClick={() => onToggleSubForm(item.id, false)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                disabled={savingSub}
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateSub}
-                className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                disabled={savingSub}
               >
-                <PlusCircle className="h-4 w-4" />
-                Add subtask
+                {savingSub ? (
+                  <Spinner className="h-4 w-4 text-white" />
+                ) : (
+                  <PlusCircle className="h-4 w-4" />
+                )}
+                {savingSub ? 'Adding…' : 'Add subtask'}
               </button>
             </div>
           </div>
