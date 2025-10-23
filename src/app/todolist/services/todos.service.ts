@@ -1,100 +1,70 @@
-import { FilterMode, Todo, TodoPriority, TodoState } from '../types'
+import { FilterMode, Todo } from '../types'
 
-export type ListResponse = { items: Todo[]; total: number }
-
-export function buildQueryRoot(page: number, pageSize: number, filters: FilterMode) {
+export async function listTodos(filters: FilterMode, skip = 0, take = 10) {
   const qs = new URLSearchParams()
-  qs.set('status', 'active')
+  // BẮT BUỘC chỉ lấy todo gốc
   qs.set('parentId', '__root__')
-  qs.set('skip', String((page - 1) * pageSize))
-  qs.set('take', String(pageSize))
+
+  // status mặc định
+  qs.set('status', 'active')
+
+  // paging + sort mặc định
+  qs.set('skip', String(skip))
+  qs.set('take', String(take))
   qs.set('order', 'dueAt')
   qs.set('dir', 'asc')
 
-  // multiple states
-  if (filters.states.length > 0) {
-    qs.set('state', filters.states.join(','))
-  }
+  // áp filter
+  if (filters.states?.length) qs.set('state', filters.states.join(','))
+  if (filters.categories !== 'all') qs.set('category', (filters.categories as string[]).join(','))
+  if (filters.priorities !== 'all') qs.set('priority', (filters.priorities as string[]).join(','))
 
-  // categories/priorities allow 'all'
-  if (filters.categories !== 'all' && filters.categories.length > 0) {
-    qs.set('category', filters.categories.join(','))
-  }
-  if (filters.priorities !== 'all' && filters.priorities.length > 0) {
-    qs.set('priority', filters.priorities.join(','))
-  }
-
-  return `/api/todos?${qs.toString()}`
-}
-
-export async function listTodos(url: string): Promise<ListResponse> {
-  const res = await fetch(url, { cache: 'no-store' })
-  if (!res.ok) throw new Error(`Fetch failed (${res.status})`)
+  const res = await fetch(`/api/todos?${qs.toString()}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('Failed to load todos')
   return res.json()
 }
 
-export async function listSubtasks(parentId: string): Promise<ListResponse> {
+export async function listSubtasks(parentId: string, filters?: FilterMode) {
   const qs = new URLSearchParams()
   qs.set('status', 'active')
   qs.set('parentId', parentId)
   qs.set('order', 'dueAt')
   qs.set('dir', 'asc')
+
+  // Áp dụng cùng filter như todo gốc
+  if (filters) {
+    if (filters.states?.length) qs.set('state', filters.states.join(','))
+    if (filters.categories !== 'all') qs.set('category', (filters.categories as string[]).join(','))
+    if (filters.priorities !== 'all') qs.set('priority', (filters.priorities as string[]).join(','))
+  }
+
   const res = await fetch(`/api/todos?${qs.toString()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('Load subtasks failed')
+  if (!res.ok) throw new Error('Failed to load subtasks')
   return res.json()
 }
 
-export async function createTodo(payload: {
-  title: string
-  description?: string | null
-  category: string
-  priority: string
-  state: TodoState
-  dueAt?: string | null
-  parentId?: string | null
-}) {
+export async function createTodo(data: Partial<Todo>) {
   const res = await fetch('/api/todos', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error || 'Cannot create')
-  }
+  if (!res.ok) throw new Error('Failed to create todo')
+  return res.json()
 }
 
-export async function updateTodo(id: string, payload: Partial<Todo>) {
+export async function updateTodo(id: string, data: Partial<Todo>) {
   const res = await fetch(`/api/todos/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error || 'Cannot update')
-  }
+  if (!res.ok) throw new Error('Failed to update todo')
+  return res.json()
 }
 
 export async function deleteTodo(id: string) {
-  const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error || 'Cannot delete')
-  }
-}
-
-// === CẬP NHẬT: thêm `state` cho tạo subtask ===
-export async function createSubTask(
-  parentId: string,
-  data: { title: string; dueAt: string; priority: TodoPriority; state: TodoState }
-) {
-  return createTodo({
-    title: data.title.trim(),
-    dueAt: data.dueAt || null,
-    parentId,
-    priority: data.priority,
-    state: data.state ?? 'todo',
-    // giữ nguyên category mặc định ở backend (nếu backend set), không truyền ở đây
-  } as any)
+  const res = await fetch(`/api/todos/${id}/delete`, { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to delete todo')
+  return res.json()
 }

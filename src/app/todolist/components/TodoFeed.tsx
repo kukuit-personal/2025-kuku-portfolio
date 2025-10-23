@@ -17,8 +17,10 @@ export function TodoFeed({
 }: {
   items: Todo[]
   subtasksMap: Record<string, Todo[]>
-  subFormOpen: Record<string, boolean>
-  setSubFormOpen: (u: (m: Record<string, boolean>) => Record<string, boolean>) => void
+  subFormOpen: Record<string, boolean> | null | undefined
+  setSubFormOpen: (
+    u: (m: Record<string, boolean> | null | undefined) => Record<string, boolean>
+  ) => void
   onOpenEdit: (t: Todo) => void
   onDelete: (id: string) => void
   onCreateSub: (
@@ -37,10 +39,13 @@ export function TodoFeed({
           <TodoCard
             key={it.id}
             item={it}
-            subtasks={subtasksMap[it.id] ?? []}
-            isSubFormOpen={!!subFormOpen[it.id]}
+            subtasks={subtasksMap?.[it.id] ?? []}
+            isSubFormOpen={!!subFormOpen?.[it.id]}
             onToggleSubForm={(_, open) =>
-              setSubFormOpen((m) => ({ ...m, [it.id]: open ?? !m[it.id] }))
+              setSubFormOpen((m) => {
+                const base = m ?? {}
+                return { ...base, [it.id]: open ?? !base[it.id] }
+              })
             }
             onOpenEdit={onOpenEdit}
             onDelete={onDelete}
@@ -48,6 +53,19 @@ export function TodoFeed({
           />
         ))}
       </div>
+
+      {/* Load more (nếu dùng) */}
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            className="px-3 py-1.5 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-60"
+          >
+            {isLoadingMore ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
     </>
   )
 }

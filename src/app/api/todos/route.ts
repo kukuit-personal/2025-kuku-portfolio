@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Status, TodoPriority, TodoState, TodoCategory } from '@prisma/client'
+import { Prisma, Status, TodoPriority, TodoState, TodoCategory } from '@prisma/client'
 
 export const revalidate = 0
 export const dynamic = 'force-dynamic'
@@ -15,14 +15,12 @@ function toEndOfDay(d: string) {
 
 // Helpers
 function parseEnum<T extends string>(val: any, allowed: readonly T[]): T | undefined {
-  return allowed.includes(val) ? (val as T) : undefined
+  return (allowed as readonly string[]).includes(val) ? (val as T) : undefined
 }
 function parseCSVEnum<T extends string>(
   raw: string | null,
   allowed: readonly T[],
-  {
-    treatAllAsNoFilter = true, // "all" => không filter
-  }: { treatAllAsNoFilter?: boolean } = {}
+  { treatAllAsNoFilter = true }: { treatAllAsNoFilter?: boolean } = {}
 ): T[] {
   if (!raw || !raw.trim()) return []
   if (treatAllAsNoFilter && raw === 'all') return []
@@ -33,12 +31,7 @@ function parseCSVEnum<T extends string>(
   return arr.filter((x) => (allowed as readonly string[]).includes(x))
 }
 
-// GET /api/todos
-// Query supports CSV:
-//   state=todo,in_progress
-//   category=Ainka,Personal  | category=all
-//   priority=high,urgent     | priority=all
-// Other params keep nguyên behavior.
+// ============ GET /api/todos ============
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -89,21 +82,25 @@ export async function GET(req: Request) {
           : {}
 
     // Search + due range
-    const q = (searchParams.get('q') || '').trim()
+    const qRaw = (searchParams.get('q') || '').trim()
+    const q = qRaw.slice(0, 200)
     const dueFrom = searchParams.get('dueFrom') || ''
     const dueTo = searchParams.get('dueTo') || ''
 
-    // Paging + sort
+    // Paging
     const skipParam = searchParams.get('skip')
     const takeParam = searchParams.get('take')
     const skip = skipParam != null ? Math.max(parseInt(skipParam, 10) || 0, 0) : 0
     const take = takeParam != null ? Math.min(Math.max(parseInt(takeParam, 10) || 0, 1), 200) : 100
 
-    const orderField = (searchParams.get('order') || 'dueAt') as 'dueAt' | 'createdAt' | 'updatedAt'
-    const orderDir = (searchParams.get('dir') || 'asc') as 'asc' | 'desc'
+    // ORDER
+    const orderFieldParam = searchParams.get('order')
+    const orderField: 'dueAt' | 'createdAt' | 'updatedAt' =
+      orderFieldParam === 'createdAt' || orderFieldParam === 'updatedAt' ? orderFieldParam : 'dueAt'
+    const orderDir: 'asc' | 'desc' = searchParams.get('dir') === 'desc' ? 'desc' : 'asc'
 
     // WHERE
-    const where: any = {
+    const where: Prisma.TodoWhereInput = {
       ...(isAllStatus ? {} : { status: statusFilter }),
       ...(states.length ? { state: { in: states } } : {}),
       ...(categories.length ? { category: { in: categories } } : {}),
@@ -128,10 +125,28 @@ export async function GET(req: Request) {
         : {}),
     }
 
+    // ===== ORDER BY FIX =====
+    let orderBy: Prisma.TodoOrderByWithRelationInput[] = []
+
+    if (orderField === 'dueAt') {
+      // Nếu Prisma 5+ có nulls: 'last', bạn có thể bật dòng này thay thế:
+      // orderBy.push({ dueAt: { sort: orderDir, nulls: 'last' } as any })
+      orderBy.push({ dueAt: orderDir })
+      orderBy.push({ priority: 'desc' })
+      orderBy.push({ createdAt: 'desc' })
+    } else if (orderField === 'createdAt') {
+      orderBy.push({ createdAt: orderDir })
+      orderBy.push({ createdAt: 'desc' })
+    } else {
+      orderBy.push({ updatedAt: orderDir })
+      orderBy.push({ createdAt: 'desc' })
+    }
+
+    // Query DB
     const [items, total] = await Promise.all([
       prisma.todo.findMany({
         where,
-        orderBy: [{ [orderField]: orderDir }, { createdAt: 'desc' }],
+        orderBy,
         skip,
         take,
       }),
@@ -157,13 +172,12 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/todos
-// Body JSON: { title: string, description?, labels?: string[] | string, category?, priority?, state?, dueAt?, startedAt?, completedAt?, canceledAt?, estimateMin?, spentMin?, waitingOn?, parentId?, sortOrder?, status? }
+// ============ POST /api/todos ============
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}))
 
-    // labels: có thể gửi chuỗi "a,b,c" hoặc mảng
+    // labels: chuỗi hoặc mảng
     let labels: string[] | null = null
     if (Array.isArray(body.labels)) {
       labels = body.labels.map((s: any) => String(s)).filter(Boolean)

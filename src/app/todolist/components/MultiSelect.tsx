@@ -69,17 +69,19 @@ export function MultiSelect({
   }, [])
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative w-full text-left">
       <button
         ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="min-w-[220px] inline-flex items-center justify-between gap-2 px-3 py-2 rounded-md border bg-white text-sm hover:bg-gray-50"
+        className="w-full min-w-0 inline-flex items-center justify-between gap-2 px-3 py-2 rounded-md border bg-white text-sm hover:bg-gray-50"
       >
-        <span className={isAll || selected.length ? 'text-gray-900' : 'text-gray-400'}>
+        <span
+          className={(isAll || selected.length ? 'text-gray-900' : 'text-gray-400') + ' truncate'}
+        >
           {labelText}
         </span>
-        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-gray-500 flex-shrink-0" viewBox="0 0 24 24">
           <path fill="currentColor" d="m7 10l5 5l5-5H7z" />
         </svg>
       </button>
@@ -87,7 +89,7 @@ export function MultiSelect({
       {open && (
         <div
           ref={popRef}
-          className="absolute z-20 mt-1 w-[280px] rounded-md border bg-white shadow-lg"
+          className="absolute z-20 mt-1 w-full left-0 right-0 rounded-md border bg-white shadow-lg"
         >
           <div className="p-2 border-b">
             <input
