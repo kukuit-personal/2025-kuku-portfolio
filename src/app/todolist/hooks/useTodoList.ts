@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { FilterMode, Todo } from '../types'
+import { FilterMode, Todo, TodoCategory, TodoPriority, TodoState } from '../types'
 import {
   listTodos,
   listSubtasks,
@@ -9,6 +9,16 @@ import {
   updateTodo,
   deleteTodo,
 } from '../services/todos.service'
+
+// Kiểu form tạo mới: dùng đúng union types để khớp Partial<Todo>
+type NewForm = {
+  title: string
+  description: string
+  category: TodoCategory
+  priority: TodoPriority
+  state: TodoState
+  dueAt: string
+}
 
 export function useTodoList() {
   const [items, setItems] = useState<Todo[]>([])
@@ -24,7 +34,9 @@ export function useTodoList() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [form, setForm] = useState<Partial<Todo>>({
+
+  // 🔧 Quan trọng: form gõ đúng kiểu, không dùng string thuần
+  const [form, setForm] = useState<NewForm>({
     title: '',
     description: '',
     category: 'Personal',
@@ -38,17 +50,15 @@ export function useTodoList() {
   const [editForm, setEditForm] = useState<Partial<Todo>>({})
   const [updating, setUpdating] = useState(false)
 
-  // Sub-form open state theo map để hợp với TodoFeed hiện tại
   const [subFormOpen, setSubFormOpen] = useState<Record<string, boolean>>({})
 
-  // ===== Prefetch subtasks cho danh sách todo gốc =====
   const prefetchSubtasksFor = useCallback(
     async (list: Todo[]) => {
       if (!list?.length) return
       await Promise.allSettled(
         list.map(async (it) => {
           try {
-            const data = await listSubtasks(it.id, filters) // chỉ lấy sub theo filter
+            const data = await listSubtasks(it.id, filters)
             setSubtasks((m) => ({ ...m, [it.id]: data.items ?? [] }))
           } catch {
             setSubtasks((m) => ({ ...m, [it.id]: [] }))
@@ -59,18 +69,14 @@ export function useTodoList() {
     [filters]
   )
 
-  // ===== Fetch todo gốc (không có parent) =====
   const fetchList = useCallback(async () => {
     setIsLoading(true)
     try {
       const skip = (page - 1) * pageSize
-      // listTodos() đã cố định parentId=__root__
       const data = await listTodos(filters, skip, pageSize)
       const roots: Todo[] = data.items ?? []
       setItems(roots)
       setTotal(data.total ?? 0)
-
-      // load subtasks cho từng root
       await prefetchSubtasksFor(roots)
     } catch (e) {
       console.error(e)
@@ -80,16 +86,16 @@ export function useTodoList() {
   }, [filters, page, pageSize, prefetchSubtasksFor])
 
   useEffect(() => {
-    // đổi filter/page ⇒ reset cache subtasks để tránh “hiện nhầm”
     setSubtasks({})
     fetchList()
   }, [fetchList])
 
-  // ===== Create todo root =====
+  // ===== Create root =====
   async function onCreateRoot() {
-    if (!form.title?.trim()) return alert('Title is required')
+    if (!form.title.trim()) return alert('Title is required')
     try {
       setCreating(true)
+      // form giờ đã đúng kiểu => hợp lệ với Partial<Todo>
       await createTodo(form)
       setForm({
         title: '',
@@ -107,7 +113,6 @@ export function useTodoList() {
     }
   }
 
-  // ===== Load subtasks của 1 parent (khi mở form con chẳng hạn) =====
   async function loadSub(parentId: string) {
     try {
       const data = await listSubtasks(parentId, filters)
@@ -117,18 +122,16 @@ export function useTodoList() {
     }
   }
 
-  // ===== Create subtask =====
   async function onCreateSub(parentId: string, sub: Partial<Todo>) {
     if (!sub.title?.trim()) return alert('Title required')
     try {
       await createTodo({ ...sub, parentId })
-      await loadSub(parentId) // reload sub sau khi tạo
+      await loadSub(parentId)
     } catch (e: any) {
       alert(e?.message || 'Create subtask failed')
     }
   }
 
-  // ===== Edit / Update =====
   function openEdit(todo: Todo, fmtDateInput: (d?: string | null) => string) {
     setEditing(todo)
     setEditForm({
@@ -151,7 +154,6 @@ export function useTodoList() {
     }
   }
 
-  // ===== Delete (soft) =====
   async function onDelete(todo: Todo) {
     if (!confirm('Delete this task?')) return
     try {
@@ -162,8 +164,12 @@ export function useTodoList() {
     }
   }
 
+  async function onDeleteById(id: string) {
+    const todo = items.find((x) => x.id === id)
+    if (todo) await onDelete(todo)
+  }
+
   return {
-    // States
     items,
     subtasks,
     total,
@@ -179,7 +185,6 @@ export function useTodoList() {
     isLoading,
     subFormOpen,
 
-    // Setters
     setFilters,
     setPage,
     setPageSize,
@@ -189,10 +194,10 @@ export function useTodoList() {
     setEditForm,
     setSubFormOpen,
 
-    // Actions
     onCreateRoot,
     onUpdate,
     onDelete,
+    onDeleteById,
     onCreateSub,
     openEdit,
     loadSub,
