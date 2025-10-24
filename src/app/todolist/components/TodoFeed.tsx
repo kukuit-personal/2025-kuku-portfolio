@@ -33,7 +33,6 @@ export function TodoFeed({
 }) {
   return (
     <>
-      {/* Tối đa 2 card / hàng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4">
         {items.map((it) => (
           <TodoCard
@@ -48,13 +47,12 @@ export function TodoFeed({
               })
             }
             onOpenEdit={onOpenEdit}
-            onDelete={onDelete}
+            onDelete={() => onDelete(it.id)}
             onCreateSub={(parentId, payload) => onCreateSub(parentId, payload)}
           />
         ))}
       </div>
 
-      {/* Load more (nếu dùng) */}
       {hasMore && (
         <div className="flex justify-center">
           <button

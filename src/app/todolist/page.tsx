@@ -16,7 +16,6 @@ export default function TodoPage() {
 
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-3">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Todo List</h1>
         <button
@@ -29,14 +28,13 @@ export default function TodoPage() {
         </button>
       </div>
 
-      {/* Add form (toggle) */}
       {m.addOpen && (
         <div className="rounded-md border bg-white p-4 sm:p-5 mb-5">
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4">
             <div className="col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
               <input
-                value={m.form.title}
+                value={m.form.title ?? ''}
                 onChange={(e) => m.setForm((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="Task title"
                 className="w-full rounded-md border px-3 py-1.5 text-sm"
@@ -45,7 +43,7 @@ export default function TodoPage() {
             <div className="col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <input
-                value={m.form.description}
+                value={m.form.description ?? ''}
                 onChange={(e) => m.setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Optional"
                 className="w-full rounded-md border px-3 py-1.5 text-sm"
@@ -54,7 +52,7 @@ export default function TodoPage() {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
-                value={m.form.category}
+                value={m.form.category ?? 'Personal'}
                 onChange={(e) =>
                   m.setForm((prev) => ({ ...prev, category: e.target.value as TodoCategory }))
                 }
@@ -70,7 +68,7 @@ export default function TodoPage() {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
               <select
-                value={m.form.priority}
+                value={m.form.priority ?? 'normal'}
                 onChange={(e) =>
                   m.setForm((prev) => ({ ...prev, priority: e.target.value as TodoPriority }))
                 }
@@ -86,20 +84,22 @@ export default function TodoPage() {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
               <select
-                value={m.form.state}
+                value={m.form.state ?? 'todo'}
                 onChange={(e) =>
                   m.setForm((prev) => ({ ...prev, state: e.target.value as TodoState }))
                 }
                 className="w-full rounded-md border px-3 py-1.5 text-sm"
               >
                 {[
-                  { val: 'todo', label: 'To Do' },
-                  { val: 'in_progress', label: 'In Progress' },
-                  { val: 'waiting', label: 'Waiting' },
-                  { val: 'blocked', label: 'Blocked' },
-                  { val: 'done', label: 'Done' },
-                  { val: 'canceled', label: 'Canceled' },
-                  { val: 'archived', label: 'Archived' },
+                  ...[
+                    { val: 'todo', label: 'To Do' },
+                    { val: 'in_progress', label: 'In Progress' },
+                    { val: 'waiting', label: 'Waiting' },
+                    { val: 'blocked', label: 'Blocked' },
+                    { val: 'done', label: 'Done' },
+                    { val: 'canceled', label: 'Canceled' },
+                    { val: 'archived', label: 'Archived' },
+                  ],
                 ].map((s) => (
                   <option key={s.val} value={s.val}>
                     {s.label}
@@ -111,12 +111,13 @@ export default function TodoPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Due date</label>
               <input
                 type="date"
-                value={m.form.dueAt}
+                value={m.form.dueAt ?? ''}
                 onChange={(e) => m.setForm((prev) => ({ ...prev, dueAt: e.target.value }))}
                 className="w-full rounded-md border px-3 py-1.5 text-sm"
               />
             </div>
           </div>
+
           <div className="mt-4 flex justify-end gap-2">
             <button
               onClick={() => m.setAddOpen(false)}
@@ -136,7 +137,6 @@ export default function TodoPage() {
         </div>
       )}
 
-      {/* Filters */}
       <FiltersBar
         filters={m.filters}
         setFilters={m.setFilters}
@@ -145,7 +145,6 @@ export default function TodoPage() {
         setPage={m.setPage as any}
       />
 
-      {/* Feed */}
       {m.isLoading ? (
         <div className="rounded-md border bg-white p-8 text-center text-gray-600">
           <span className="inline-flex items-center gap-2">
@@ -161,15 +160,14 @@ export default function TodoPage() {
           subFormOpen={m.subFormOpen}
           setSubFormOpen={m.setSubFormOpen}
           onOpenEdit={(t) => m.openEdit(t, fmtDateInput)}
-          onDelete={m.onDelete}
+          onDelete={m.onDeleteById}
           onCreateSub={m.onCreateSub}
           onLoadMore={() => {}}
-          hasMore={false}
+          hasMore={hasMore}
           isLoadingMore={false}
         />
       )}
 
-      {/* Optional: vẫn giữ Pagination */}
       <Pagination total={m.total} page={m.page} pageSize={m.pageSize} setPage={m.setPage as any} />
 
       <EditModal
