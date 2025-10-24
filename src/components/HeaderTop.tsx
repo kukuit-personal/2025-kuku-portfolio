@@ -17,15 +17,6 @@ export default function HeaderTop() {
           </svg>
         </label>
 
-        {/* Left: icon app (K) */}
-        <Link href="/" className="mr-2 sm:mr-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-indigo-600 grid place-items-center text-white text-[10px] font-bold">
-              K
-            </div>
-          </div>
-        </Link>
-
         {/* Center: search */}
         <div className="flex-1 flex justify-center px-3">
           <div className="w-full max-w-3xl relative">
@@ -46,18 +37,6 @@ export default function HeaderTop() {
 
         {/* Right: more + avatar */}
         <div className="flex items-center gap-2">
-          <button
-            aria-label="More"
-            className="h-7 w-7 grid place-items-center rounded-md hover:bg-gray-100 text-gray-600"
-          >
-            <svg viewBox="0 0 24 24" className="w-3 h-3">
-              <path
-                fill="currentColor"
-                d="M12 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 6a2 2 0 1 0 0-4a2 2 0 0 0 0 4"
-              />
-            </svg>
-          </button>
-
           <div className="relative">
             <div className="w-7 h-7 rounded-full bg-amber-300 grid place-items-center text-[10px] font-semibold text-gray-700">
               KH
