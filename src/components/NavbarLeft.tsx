@@ -26,11 +26,10 @@ type NavItem = {
 }
 
 const ITEMS: NavItem[] = [
-  { href: '/worklog', label: 'Worklog', icon: Laptop },
-  { href: '/healthlog', label: 'Health', icon: HeartPulse },
-  { href: '/todolist', label: 'Todolist', icon: ListTodo },
-  { href: '/money', label: 'Money', icon: PiggyBank },
-  { href: '/football', label: 'Football', icon: Volleyball },
+  { href: '/worklog', label: 'Landing Page', icon: Laptop },
+  { href: '/healthlog', label: 'Email Template', icon: HeartPulse },
+  { href: '/todolist', label: 'eDetailing', icon: ListTodo },
+  { href: '/money', label: 'Mini Game', icon: PiggyBank },
 ]
 
 function isActive(pathname: string, href: string) {

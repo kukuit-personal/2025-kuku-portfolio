@@ -4,12 +4,13 @@ import './globals.css'
 import 'grapesjs/dist/css/grapes.min.css'
 import NavbarLeft from '@/components/NavbarLeft'
 import HeaderTop from '@/components/HeaderTop'
+import Providers from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'KukuIt | Worklog',
-  description: 'KukuIt Worklog System',
+  title: 'KukuIt | Portfilio',
+  description: 'KukuIt personal portfolio website',
   icons: {
     icon: '/favicon.ico',
   },
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Main area */}
           <div className="flex-1 flex flex-col">
             <HeaderTop />
-            <div>{children}</div>
+            <div>
+              <Providers>{children}</Providers>
+            </div>
           </div>
 
           {/* ✅ Backdrop cũng là sibling của peer */}

@@ -1,10 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model WorkSession {
+  id              String            @id @default(cuid())
+  date            String
+  startAt         DateTime
+  endAt           DateTime?
+  durationSeconds Int?
+  device          String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  status          WorkSessionStatus @default(active)
+
+  @@index([date])
+  @@index([status])
+}
+
+model HealthLog {
+  id            String   @id @default(cuid())
+  date          String
+  weekday       String?
+  weight        Decimal? @db.Decimal(5, 2)
+  morning       String?
+  gym           String?
+  afternoon     String?
+  noEatAfter    String?
+  calories      Int?
+  goutTreatment Int?
+  status        Status   @default(active)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@index([status])
+}
+
+model Todo {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  labels      String[]
+  category    TodoCategory @default(Other)
+  priority    TodoPriority @default(normal)
+  state       TodoState    @default(todo)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  dueAt       DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  canceledAt  DateTime?
+  estimateMin Int?
+  spentMin    Int?
+  waitingOn   String?
+  parentId    String?
+  sortOrder   Int?
+  status      Status       @default(active)
+  parent      Todo?        @relation("TodoSubtasks", fields: [parentId], references: [id])
+  subtasks    Todo[]       @relation("TodoSubtasks")
+
+  @@index([state, priority, dueAt])
+  @@index([category])
+  @@index([parentId, sortOrder])
+  @@index([status])
 }
 
 enum Status {
@@ -17,44 +81,6 @@ enum WorkSessionStatus {
   disabled
 }
 
-model WorkSession {
-  id              String             @id @default(cuid())
-  date            String
-  startAt         DateTime
-  endAt           DateTime?
-  durationSeconds Int?
-  device          String?
-  notes           String?
-  status          WorkSessionStatus  @default(active)  // <-- enum
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-
-  @@index([date])
-  @@index([status])
-}
-
-model HealthLog {
-  id            String   @id @default(cuid())
-  date          String   // YYYY-MM-DD (Asia/Ho_Chi_Minh)
-  weekday       String?  // "Hai", "Ba", "Tư", "Bảy", "CN"
-  weight        Decimal? @db.Decimal(5,2)
-
-  morning       String?  // ví dụ: "Tập bóng t3-b4"
-  gym           String?  // ghi chú Gym
-  afternoon     String?  // ví dụ: "Đá bóng"
-  noEatAfter    String?  // "Ok" hoặc ghi chú khác
-  calories      Int?     // Calo (Kcal)
-  goutTreatment Int?     // Mức điều trị gout (0–3)
-
-  status        Status   @default(active)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([date])
-  @@index([status])
-}
-
-// ========= Enums cho Todo =========
 enum TodoCategory {
   Ainka
   Kuku
@@ -73,56 +99,11 @@ enum TodoPriority {
 }
 
 enum TodoState {
-  todo        // tạo mới, chưa bắt đầu
-  in_progress // đang làm
-  waiting     // đang chờ ai đó/điều kiện
-  blocked     // bị chặn
-  done        // hoàn thành
-  canceled    // hủy
-  archived    // lưu trữ, ẩn khỏi view mặc định
-}
-
-// ========= Model Todo (đơn bảng, tự quản lý cha–con) =========
-model Todo {
-  id          String       @id @default(cuid())
-
-  // Nội dung & phân loại
-  title       String
-  description String?
-  labels      String[]     // "nhãn" – mảng text (Postgres text[])
-
-  category    TodoCategory @default(Other)
-  priority    TodoPriority @default(normal)
-  state       TodoState    @default(todo)
-
-  // Thời gian
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  dueAt       DateTime?    // deadline (có thể bỏ trống)
-  startedAt   DateTime?
-  completedAt DateTime?
-  canceledAt  DateTime?
-
-  // Quản lý tiến độ/ước lượng (tùy chọn)
-  estimateMin Int?         // ước lượng (phút)
-  spentMin    Int?         // thời gian đã làm (phút), có thể tự cộng dồn
-
-  // “Waiting on” – ghi chú đang chờ ai/điều gì
-  waitingOn   String?
-
-  // Cây cha–con (subtasks) dùng self-relation
-  parentId    String?
-  parent      Todo?        @relation("TodoSubtasks", fields: [parentId], references: [id])
-  subtasks    Todo[]       @relation("TodoSubtasks")
-
-  // Sắp xếp thủ công trong cùng parent (nếu cần)
-  sortOrder   Int?
-
-  // Soft enable/disable theo schema chung của bạn
-  status      Status       @default(active)
-
-  @@index([state, priority, dueAt])
-  @@index([category])
-  @@index([parentId, sortOrder])
-  @@index([status])
+  todo
+  in_progress
+  waiting
+  blocked
+  done
+  canceled
+  archived
 }
