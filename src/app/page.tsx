@@ -1,6 +1,6 @@
 // app/page.tsx (or app/portfolio/page.tsx)
 // Next.js 14 App Router + TailwindCSS
-// Single-file portfolio page for Huynh Duy Khang — English content
+// Single-file portfolio page for KukuIt — English content
 
 import {
   Github,
@@ -14,9 +14,9 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Huynh Duy Khang – Portfolio',
+  title: 'KukuIt - Portfolio',
   description:
-    'Portfolio of Huynh Duy Khang – Web Developer (Next.js, Tailwind, TanStack Query, Neon Postgres)',
+    'Portfolio of KukuIt - Web Developer (Next.js, Tailwind, TanStack Query, Neon Postgres)',
 }
 
 const skills = [
@@ -82,9 +82,7 @@ export default function PortfolioPage() {
               <p className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 backdrop-blur">
                 <MapPin className="h-3.5 w-3.5" /> Viet Nam · Open to Work
               </p>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
-                Huynh Duy Khang
-              </h1>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">KukuIt</h1>
               <p className="mt-3 max-w-2xl text-base leading-relaxed text-gray-600">
                 Web Developer focused on building fast, maintainable user interfaces and pragmatic
                 backends. I work primarily with <strong>Next.js 14</strong>,{' '}
@@ -255,7 +253,7 @@ export default function PortfolioPage() {
           </div>
         </div>
         <footer className="mt-8 pb-10 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} Huynh Duy Khang. Built with Next.js & Tailwind.
+          © {new Date().getFullYear()} KukuIt. Built with Next.js & Tailwind.
         </footer>
       </section>
     </main>

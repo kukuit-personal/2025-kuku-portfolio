@@ -1,50 +1,139 @@
-// app/components/HeaderTop.tsx
+'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { Home, Info, FolderKanban, Mail } from 'lucide-react'
+
+type Item = { label: string; href: string; icon: React.ReactNode }
+
+const NAV_ITEMS: Item[] = [
+  { label: 'Home', href: '/', icon: <Home className="w-4 h-4" /> },
+  { label: 'About', href: '/about', icon: <Info className="w-4 h-4" /> },
+  { label: 'Project', href: '/project', icon: <FolderKanban className="w-4 h-4" /> },
+  { label: 'Contact', href: '/contact', icon: <Mail className="w-4 h-4" /> },
+]
+
+const CONTAINER = 'max-w-6xl mx-auto px-4'
+
+function NavItem({
+  href,
+  label,
+  icon,
+  isActive,
+  onClick,
+  isMobile = false,
+}: {
+  href: string
+  label: string
+  icon: React.ReactNode
+  isActive: boolean
+  onClick?: () => void
+  isMobile?: boolean
+}) {
+  const base =
+    'flex items-center gap-2 px-3 py-2 text-[15px] sm:text-base font-medium transition-colors focus:outline-none focus-visible:ring-0'
+
+  // Desktop: border-bottom (giữ nguyên)
+  const desktop =
+    'hidden sm:flex border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-emerald-300'
+  const desktopActive = 'border-emerald-500 text-gray-900'
+
+  // Mobile: border-left + bg xanh nhạt, không rounded
+  const mobile =
+    'sm:hidden border-l-2 border-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+  const mobileActive = 'border-emerald-500 bg-emerald-50 text-gray-900'
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={[
+        base,
+        isMobile ? mobile : desktop,
+        isActive ? (isMobile ? mobileActive : desktopActive) : '',
+      ].join(' ')}
+    >
+      <span
+        className={isActive ? 'text-emerald-600' : 'text-gray-500 group-hover:text-emerald-600'}
+      >
+        {icon}
+      </span>
+      {label}
+    </Link>
+  )
+}
 
 export default function HeaderTop() {
+  const pathname = usePathname() || '/'
+  const [open, setOpen] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname === href || pathname.startsWith(href + '/')
+  }
+
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
-      <div className="h-12 mx-auto px-3 sm:px-4 flex items-center">
-        {/* Hamburger chỉ hiện trên mobile */}
-        <label
-          htmlFor="nav-toggle"
+      <div className={`${CONTAINER} h-14 flex items-center gap-2`}>
+        {/* Hamburger (mobile) */}
+        <button
           aria-label="Open menu"
-          className="sm:hidden mr-1 inline-grid place-items-center w-7 h-7 rounded-md hover:bg-gray-100"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="sm:hidden inline-grid place-items-center w-10 h-10 hover:bg-gray-100"
         >
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-700">
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700">
             <path fill="currentColor" d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z" />
           </svg>
-        </label>
+        </button>
 
-        {/* Center: search */}
-        <div className="flex-1 flex justify-center px-3">
-          <div className="w-full max-w-3xl relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-              <svg viewBox="0 0 24 24" className="w-3 h-3 text-gray-400">
-                <path
-                  fill="currentColor"
-                  d="M10 18a7.96 7.96 0 0 0 4.9-1.7l4.4 4.4l1.4-1.4l-4.4-4.4A8 8 0 1 0 10 18m0-2a6 6 0 1 1 0-12a6 6 0 0 1 0 12"
-                />
-              </svg>
-            </span>
-            <input
-              className="w-full rounded-md border pl-8 pr-3 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring"
-              placeholder="Search (Ctrl+Alt+E)"
-            />
+        {/* Nav (desktop) */}
+        <nav className="ml-2 hidden sm:flex items-stretch justify-start">
+          <div className="flex h-14 items-end gap-3">
+            {NAV_ITEMS.map((it) => (
+              <NavItem
+                key={it.href}
+                href={it.href}
+                label={it.label}
+                icon={it.icon}
+                isActive={isActive(it.href)}
+              />
+            ))}
           </div>
-        </div>
+        </nav>
 
-        {/* Right: more + avatar */}
-        <div className="flex items-center gap-2">
+        {/* Right: avatar */}
+        <div className="ml-auto flex items-center gap-2">
           <div className="relative">
-            <div className="w-7 h-7 rounded-full bg-amber-300 grid place-items-center text-[10px] font-semibold text-gray-700">
+            <div className="w-8 h-8 grid place-items-center text-[10px] font-semibold text-white bg-gradient-to-br from-cyan-400 to-lime-500 rounded-full">
               KH
             </div>
-            <span className="absolute -right-0.5 -bottom-0.5 w-2 h-2 rounded-full bg-green-500 ring-2 ring-white"></span>
+            <span className="absolute -right-0.5 -bottom-0.5 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full"></span>
           </div>
         </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {open && (
+        <div className="sm:hidden border-t bg-white/95 backdrop-blur">
+          <div className={`${CONTAINER}`}>
+            <nav className="flex flex-col py-1">
+              {NAV_ITEMS.map((it) => (
+                <NavItem
+                  key={it.href}
+                  href={it.href}
+                  label={it.label}
+                  icon={it.icon}
+                  isActive={isActive(it.href)}
+                  isMobile
+                  onClick={() => setOpen(false)}
+                />
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
