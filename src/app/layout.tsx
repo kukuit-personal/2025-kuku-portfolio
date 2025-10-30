@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <input id="nav-toggle" type="checkbox" className="peer sr-only" />
 
           {/* Sidebar (off-canvas mobile, fixed width desktop) */}
-          <NavbarLeft />
+          {/* <NavbarLeft /> */}
 
           {/* Main area */}
           <div className="flex-1 flex flex-col">
